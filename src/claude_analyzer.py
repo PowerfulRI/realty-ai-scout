@@ -95,7 +95,7 @@ class ClaudeAnalyzer:
         Baths: {property_data.get('baths', 'Unknown')}
         Square Feet: {property_data.get('sqft', 'Unknown')}
         Zestimate: {property_data.get('zestimate', 'Unknown')}
-        Description: {property_data.get('description', 'No description available')[:200]}
+        Description: {(property_data.get('description') or 'No description available')[:200]}
 
         COMPARABLE SALES:
         {self._format_comparables_for_analysis(comparables)}
