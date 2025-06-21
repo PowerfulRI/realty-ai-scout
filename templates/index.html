@@ -280,23 +280,162 @@
             // Update timestamp
             document.getElementById('analysisTimestamp').textContent = new Date().toLocaleString();
             
-            // Populate results (placeholder for now)
+            // Get the analysis data
+            const property = data.property_data || {};
+            const comparables = data.comparables || [];
+            const analysis = data.analysis || {};
+            
+            // Populate property summary
             document.getElementById('propertySummary').innerHTML = `
-                <h6>${data.address}</h6>
-                <p class="text-muted">${data.message}</p>
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6>${data.address}</h6>
+                        <p class="text-muted mb-3">${analysis.executive_summary || 'Property analysis completed'}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="badge bg-success">${data.status}</span>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col-md-3">
-                        <strong>Status:</strong><br>
-                        <span class="badge bg-info">${data.status}</span>
+                        <div class="property-feature">
+                            <h4>${property.price ? '$' + formatNumber(property.price) : 'N/A'}</h4>
+                            <small>Listed Price</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="property-feature">
+                            <h4>${property.beds || 'N/A'}</h4>
+                            <small>Bedrooms</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="property-feature">
+                            <h4>${property.baths || 'N/A'}</h4>
+                            <small>Bathrooms</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="property-feature">
+                            <h4>${property.sqft ? formatNumber(property.sqft) : 'N/A'}</h4>
+                            <small>Square Feet</small>
+                        </div>
                     </div>
                 </div>
             `;
             
-            // TODO: Populate other sections with real data
-            document.getElementById('valuationResults').innerHTML = '<p class="text-muted">Valuation analysis will be displayed here</p>';
-            document.getElementById('comparablesResults').innerHTML = '<p class="text-muted">Comparable properties will be displayed here</p>';
-            document.getElementById('marketInsights').innerHTML = '<p class="text-muted">Market insights will be displayed here</p>';
-            document.getElementById('aiRecommendations').innerHTML = '<p class="text-muted">AI recommendations will be displayed here</p>';
+            // Populate valuation results
+            const valuation = analysis.valuation || {};
+            document.getElementById('valuationResults').innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Estimated Value</h6>
+                        <p class="h4 text-primary">${valuation.estimated_value || 'Analysis in progress'}</p>
+                        <p class="text-muted">${valuation.value_range || ''}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Confidence Level</h6>
+                        <p class="h5">${valuation.confidence_level || 'Medium'}</p>
+                        <p class="text-muted">Based on available data and comparables</p>
+                    </div>
+                </div>
+                ${analysis.pricing_strategy ? `
+                <div class="mt-3">
+                    <h6>Pricing Strategy</h6>
+                    <p><strong>Suggested List Price:</strong> ${analysis.pricing_strategy.suggested_list_price || 'TBD'}</p>
+                    <p class="text-muted">${analysis.pricing_strategy.pricing_rationale || ''}</p>
+                </div>
+                ` : ''}
+            `;
+            
+            // Populate comparables
+            if (comparables.length > 0) {
+                let compHtml = '';
+                comparables.forEach((comp, index) => {
+                    const grade = 'B'; // Default grade
+                    compHtml += `
+                        <div class="comparable-item mb-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6>${comp.address}</h6>
+                                    <p class="mb-1">
+                                        <strong>$${formatNumber(comp.sale_price)}</strong> • 
+                                        ${comp.beds} bed, ${comp.baths} bath • 
+                                        ${formatNumber(comp.sqft)} sqft
+                                    </p>
+                                    <small class="text-muted">Distance: ${comp.distance_miles || 'Unknown'} miles</small>
+                                </div>
+                                <div>
+                                    <span class="comparable-grade grade-${grade.toLowerCase()}">${grade}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                document.getElementById('comparablesResults').innerHTML = compHtml;
+            } else {
+                document.getElementById('comparablesResults').innerHTML = '<p class="text-muted">No comparable properties found</p>';
+            }
+            
+            // Populate market insights
+            const marketAnalysis = analysis.market_analysis || {};
+            document.getElementById('marketInsights').innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="market-indicator">
+                            <div class="market-indicator-icon trend-up">📈</div>
+                            <div>
+                                <h6>Market Trend</h6>
+                                <p class="mb-0">${marketAnalysis.market_trend || 'Stable market conditions'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="market-indicator">
+                            <div class="market-indicator-icon trend-stable">📊</div>
+                            <div>
+                                <h6>Price per Sq Ft</h6>
+                                <p class="mb-0">${marketAnalysis.price_per_sqft || 'Calculating...'}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <p class="text-muted">${marketAnalysis.market_position || 'Market position analysis completed'}</p>
+                </div>
+            `;
+            
+            // Populate AI recommendations
+            let recommendationsHtml = '';
+            if (analysis.recommendations && analysis.recommendations.length > 0) {
+                recommendationsHtml = '<ul class="list-unstyled">';
+                analysis.recommendations.forEach(rec => {
+                    recommendationsHtml += `<li class="mb-2">• ${rec}</li>`;
+                });
+                recommendationsHtml += '</ul>';
+                
+                if (analysis.risk_factors && analysis.risk_factors.length > 0) {
+                    recommendationsHtml += '<h6 class="mt-3">Risk Factors</h6><ul class="list-unstyled text-warning">';
+                    analysis.risk_factors.forEach(risk => {
+                        recommendationsHtml += `<li class="mb-2">⚠️ ${risk}</li>`;
+                    });
+                    recommendationsHtml += '</ul>';
+                }
+            } else if (analysis.raw_analysis) {
+                recommendationsHtml = `<div class="alert alert-info">
+                    <h6>Analysis Results</h6>
+                    <p>${analysis.raw_analysis.substring(0, 500)}...</p>
+                </div>`;
+            } else {
+                recommendationsHtml = '<p class="text-muted">Generating personalized recommendations...</p>';
+            }
+            
+            document.getElementById('aiRecommendations').innerHTML = recommendationsHtml;
+        }
+        
+        function formatNumber(num) {
+            if (!num) return 'N/A';
+            return parseInt(num).toLocaleString();
         }
         
         function showError(message) {

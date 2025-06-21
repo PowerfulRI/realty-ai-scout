@@ -80,35 +80,87 @@ class ClaudeAnalyzer:
         property_data = scraped_data.get('property', {})
         comparables = scraped_data.get('comparables', [])
         
+        # Create a more focused and actionable prompt
         prompt = f"""
-        As a comprehensive real estate AI analyst, provide a complete property analysis report:
+        You are an expert real estate analyst. Analyze this property and provide actionable insights.
 
-        SUBJECT PROPERTY DATA:
-        {json.dumps(property_data, indent=2)}
+        SUBJECT PROPERTY:
+        Address: {property_data.get('address', 'Unknown')}
+        Price: ${property_data.get('price', 'Unknown')}
+        Beds: {property_data.get('beds', 'Unknown')}
+        Baths: {property_data.get('baths', 'Unknown')}
+        Square Feet: {property_data.get('sqft', 'Unknown')}
+        Zestimate: {property_data.get('zestimate', 'Unknown')}
+        Description: {property_data.get('description', 'No description available')[:200]}
 
-        COMPARABLE PROPERTIES:
-        {json.dumps(comparables, indent=2)}
+        COMPARABLE SALES:
+        {self._format_comparables_for_analysis(comparables)}
 
-        Provide a comprehensive report with these sections:
+        Please provide a comprehensive analysis in JSON format with these exact keys:
 
-        1. EXECUTIVE SUMMARY
-        2. PROPERTY OVERVIEW
-        3. MARKET ANALYSIS (research current local market conditions)
-        4. COMPARABLE SALES ANALYSIS
-        5. PROPERTY VALUATION
-        6. LISTING DESCRIPTION (compelling marketing copy)
-        7. PRICING STRATEGY
-        8. INVESTMENT ANALYSIS
-        9. RECOMMENDATIONS
-        10. RISK FACTORS
+        {{
+            "executive_summary": "Brief 2-3 sentence overview of the property and opportunity",
+            "property_overview": {{
+                "condition_assessment": "Assessment based on description and photos",
+                "key_features": ["List of notable features"],
+                "property_type": "Single family/Condo/etc"
+            }},
+            "market_analysis": {{
+                "market_trend": "Current trend assessment",
+                "price_per_sqft": "Calculated if possible",
+                "market_position": "How this property compares to market"
+            }},
+            "comparable_analysis": {{
+                "comp_summary": "Summary of comparable properties",
+                "price_adjustments": "Adjustments needed for differences",
+                "reliability_score": "A/B/C rating for comp quality"
+            }},
+            "valuation": {{
+                "estimated_value": "Your estimated fair market value",
+                "value_range": "Low to high range",
+                "confidence_level": "High/Medium/Low with reasoning"
+            }},
+            "listing_description": "Compelling 2-3 paragraph marketing description",
+            "pricing_strategy": {{
+                "suggested_list_price": "Recommended listing price",
+                "pricing_rationale": "Why this price makes sense",
+                "market_timing": "Best time to list"
+            }},
+            "investment_analysis": {{
+                "rental_potential": "Estimated monthly rent if applicable",
+                "appreciation_outlook": "Future value prospects",
+                "investment_grade": "A-F rating as investment"
+            }},
+            "recommendations": ["List of 3-5 specific action items"],
+            "risk_factors": ["List of potential concerns or red flags"]
+        }}
 
-        Make this a professional-grade analysis that could be used by real estate professionals.
-        Include specific numbers, percentages, and actionable insights.
-        Use your knowledge to fill gaps where data might be incomplete.
-        Format as structured JSON with each section clearly defined.
+        Use your real estate knowledge to provide meaningful insights even if some data is missing.
+        Be specific with numbers and percentages where possible.
+        Focus on actionable advice for buyers, sellers, or investors.
         """
         
         return self._make_request(prompt)
+    
+    def _format_comparables_for_analysis(self, comparables: List[Dict]) -> str:
+        """Format comparable properties for Claude analysis"""
+        if not comparables:
+            return "No comparable properties found"
+        
+        formatted = []
+        for i, comp in enumerate(comparables[:5], 1):
+            comp_text = f"""
+            Comp {i}:
+            - Address: {comp.get('address', 'Unknown')}
+            - Sale Price: ${comp.get('sale_price', 'Unknown')}
+            - Beds: {comp.get('beds', 'Unknown')}
+            - Baths: {comp.get('baths', 'Unknown')}
+            - Sqft: {comp.get('sqft', 'Unknown')}
+            - Distance: {comp.get('distance_miles', 'Unknown')} miles
+            """
+            formatted.append(comp_text.strip())
+        
+        return "\n".join(formatted)
     
     def generate_listing_description(self, property_data: Dict, analysis: Dict) -> Dict:
         """Generate compelling listing description"""
