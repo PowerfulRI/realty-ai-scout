@@ -9,6 +9,10 @@ import json
 import logging
 from typing import Dict, List, Optional
 from anthropic import Anthropic
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -269,7 +273,7 @@ class ClaudeAnalyzer:
     def _make_request(self, prompt: str) -> Dict:
         """Make request to Claude API"""
         try:
-            response = self.client.messages.create(
+            message = self.client.messages.create(
                 model="claude-3-5-sonnet-20241022",
                 max_tokens=4000,
                 temperature=0.3,
@@ -283,10 +287,10 @@ class ClaudeAnalyzer:
             
             return {
                 "success": True,
-                "content": response.content[0].text,
+                "content": message.content[0].text,
                 "usage": {
-                    "input_tokens": response.usage.input_tokens,
-                    "output_tokens": response.usage.output_tokens
+                    "input_tokens": message.usage.input_tokens,
+                    "output_tokens": message.usage.output_tokens
                 }
             }
             
