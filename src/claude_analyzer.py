@@ -1,6 +1,7 @@
 """
-Claude AI analyzer for property insights and recommendations
-Processes property data and generates analysis, descriptions, and pricing strategies
+Claude AI analyzer for comprehensive real estate analysis
+Handles ALL analysis: market research, comparable analysis, property insights, and pricing strategies
+Replaces the need for separate market research APIs
 """
 
 import os
@@ -18,13 +19,13 @@ class ClaudeAnalyzer:
         self.api_key = api_key or os.getenv('ANTHROPIC_API_KEY')
         self.client = Anthropic(api_key=self.api_key) if self.api_key else None
     
-    def analyze_property_value(self, property_data: Dict, comparables: List[Dict], market_data: Dict) -> Dict:
+    def analyze_property_value(self, property_data: Dict, comparables: List[Dict]) -> Dict:
         """Analyze property value using comparable sales and market data"""
         if not self.client:
             return {"error": "Claude API key not configured"}
         
         prompt = f"""
-        As a professional real estate appraiser, analyze this property and provide a comprehensive valuation:
+        As a professional real estate appraiser and market researcher, analyze this property and provide comprehensive insights:
 
         SUBJECT PROPERTY:
         {json.dumps(property_data, indent=2)}
@@ -32,18 +33,79 @@ class ClaudeAnalyzer:
         COMPARABLE SALES:
         {json.dumps(comparables, indent=2)}
 
-        MARKET DATA:
-        {json.dumps(market_data, indent=2)}
+        Please provide a comprehensive analysis including:
 
-        Please provide:
-        1. ESTIMATED MARKET VALUE with confidence range
-        2. COMPARABLE ANALYSIS - which comps are most/least reliable and why
-        3. MARKET ADJUSTMENTS - time, condition, location, size adjustments
-        4. PRICING STRATEGY - suggested list price and reasoning
-        5. MARKET TIMING - best time to sell based on current conditions
-        6. POTENTIAL ISSUES - any red flags or concerns
+        1. MARKET RESEARCH:
+           - Current market trends in this area
+           - Average days on market
+           - Price per square foot trends
+           - Inventory levels (buyer's vs seller's market)
+
+        2. PROPERTY VALUATION:
+           - Estimated market value with confidence range
+           - Price per square foot analysis
+           - Comparable analysis and adjustments
+
+        3. COMPARABLE ANALYSIS:
+           - Rate each comparable (A/B/C grade)
+           - Explain adjustments needed
+           - Identify best/worst comparables and why
+
+        4. MARKET STRATEGY:
+           - Suggested list price and reasoning
+           - Best time to sell
+           - Marketing recommendations
+
+        5. INVESTMENT ANALYSIS:
+           - Potential rental income
+           - Appreciation prospects
+           - Risk factors
+
+        6. PROPERTY INSIGHTS:
+           - Condition assessment
+           - Upgrade recommendations
+           - Potential issues or red flags
 
         Format your response as structured JSON with clear sections.
+        Use your knowledge of real estate markets to provide insights even with limited data.
+        """
+        
+        return self._make_request(prompt)
+    
+    def comprehensive_property_analysis(self, scraped_data: Dict) -> Dict:
+        """Perform complete property analysis using scraped data"""
+        if not self.client:
+            return {"error": "Claude API key not configured"}
+        
+        property_data = scraped_data.get('property', {})
+        comparables = scraped_data.get('comparables', [])
+        
+        prompt = f"""
+        As a comprehensive real estate AI analyst, provide a complete property analysis report:
+
+        SUBJECT PROPERTY DATA:
+        {json.dumps(property_data, indent=2)}
+
+        COMPARABLE PROPERTIES:
+        {json.dumps(comparables, indent=2)}
+
+        Provide a comprehensive report with these sections:
+
+        1. EXECUTIVE SUMMARY
+        2. PROPERTY OVERVIEW
+        3. MARKET ANALYSIS (research current local market conditions)
+        4. COMPARABLE SALES ANALYSIS
+        5. PROPERTY VALUATION
+        6. LISTING DESCRIPTION (compelling marketing copy)
+        7. PRICING STRATEGY
+        8. INVESTMENT ANALYSIS
+        9. RECOMMENDATIONS
+        10. RISK FACTORS
+
+        Make this a professional-grade analysis that could be used by real estate professionals.
+        Include specific numbers, percentages, and actionable insights.
+        Use your knowledge to fill gaps where data might be incomplete.
+        Format as structured JSON with each section clearly defined.
         """
         
         return self._make_request(prompt)

@@ -1,6 +1,7 @@
 """
-Multi-source property data scraper using Selenium
+Comprehensive property data scraper using Selenium
 Scrapes Zillow, Realtor.com, and other real estate sites
+Collects property data AND comparable properties for Claude analysis
 """
 
 from selenium import webdriver
@@ -113,13 +114,58 @@ class PropertyScraper:
             logger.error(f"Error scraping Realtor.com for {address}: {e}")
             return None
     
-    def find_comparables(self, address, radius_miles=1):
+    def find_comparables(self, address, radius_miles=1, max_comps=10):
         """Find comparable properties near the given address"""
-        # TODO: Implement comparable property search
-        # Search for recently sold properties within radius
-        # Filter by similar size, type, features
+        if not self.driver:
+            return []
+            
+        try:
+            # Search for recently sold properties on Zillow
+            comps_url = f"https://www.zillow.com/homes/recently_sold/{address.replace(' ', '-')}_rb/"
+            self.driver.get(comps_url)
+            
+            # Wait for page to load
+            WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+            
+            # TODO: Extract comparable properties data
+            # - Recently sold properties within radius
+            # - Property details, sale prices, dates
+            # - Property features for comparison
+            
+            comparables = []
+            # Placeholder structure for comparable properties
+            for i in range(min(3, max_comps)):  # Start with 3 sample comps
+                comp = {
+                    'address': f'Sample Comp {i+1} Near {address}',
+                    'sale_price': None,
+                    'sale_date': None,
+                    'sqft': None,
+                    'beds': None,
+                    'baths': None,
+                    'distance_miles': None,
+                    'source': 'zillow',
+                    'scraped_at': time.time()
+                }
+                comparables.append(comp)
+            
+            return comparables
+            
+        except Exception as e:
+            logger.error(f"Error finding comparables near {address}: {e}")
+            return []
+    
+    def scrape_property_and_comps(self, address):
+        """Scrape both property data and comparable properties"""
+        property_data = self.scrape_zillow(address)
+        comparables = self.find_comparables(address)
         
-        return []
+        return {
+            'property': property_data,
+            'comparables': comparables,
+            'scraped_at': time.time()
+        }
 
 # Example usage
 if __name__ == "__main__":

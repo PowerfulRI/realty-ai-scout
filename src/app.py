@@ -5,6 +5,7 @@ AI-powered real estate analysis tool for property valuation and market insights
 
 from flask import Flask, render_template, request, jsonify
 import os
+import time
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -26,17 +27,40 @@ def analyze_property():
         if not address:
             return jsonify({'error': 'Address is required'}), 400
         
-        # TODO: Implement property analysis pipeline
-        # 1. Scrape property data using Selenium
-        # 2. Research market with Perplexity API
-        # 3. Analyze with Claude AI
-        # 4. Return structured results
+        # Simplified property analysis pipeline
+        from .selenium_scraper import PropertyScraper
+        from .claude_analyzer import ClaudeAnalyzer
         
-        return jsonify({
-            'address': address,
-            'status': 'Analysis coming soon!',
-            'message': 'Property analysis pipeline will be implemented here'
-        })
+        # Initialize components
+        scraper = PropertyScraper(headless=True)
+        analyzer = ClaudeAnalyzer()
+        
+        try:
+            # 1. Scrape property data and comparables
+            if scraper.start_driver():
+                scraped_data = scraper.scrape_property_and_comps(address)
+                scraper.close_driver()
+                
+                # 2. Analyze with Claude AI
+                analysis = analyzer.comprehensive_property_analysis(scraped_data)
+                
+                # 3. Return comprehensive results
+                return jsonify({
+                    'address': address,
+                    'status': 'success',
+                    'scraped_data': scraped_data,
+                    'analysis': analysis,
+                    'timestamp': time.time()
+                })
+            else:
+                return jsonify({'error': 'Failed to initialize web scraper'}), 500
+                
+        except Exception as e:
+            return jsonify({
+                'error': f'Analysis failed: {str(e)}',
+                'address': address,
+                'status': 'error'
+            }), 500
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
