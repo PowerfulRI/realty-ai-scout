@@ -37,10 +37,66 @@
                                 <label for="analysisType" class="form-label">Analysis Type</label>
                                 <select class="form-select" id="analysisType" name="analysisType">
                                     <option value="full">Full Analysis</option>
+                                    <option value="flip">Flip / Investment Analysis</option>
                                     <option value="valuation">Valuation Only</option>
                                     <option value="comparables">Comparables Only</option>
                                     <option value="market">Market Research</option>
                                 </select>
+                            </div>
+
+                            <!-- Manual Property Details (optional override) -->
+                            <div class="mb-3">
+                                <a class="text-decoration-none small" data-bs-toggle="collapse" href="#manualDetails" role="button">
+                                    + Add property details manually
+                                </a>
+                                <div class="collapse mt-2" id="manualDetails">
+                                    <div class="card card-body bg-light p-2">
+                                        <small class="text-muted mb-2">Override scraped data or enter details when scraping fails</small>
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <input type="number" class="form-control form-control-sm" id="price" placeholder="Price ($)">
+                                            </div>
+                                            <div class="col-6">
+                                                <input type="number" class="form-control form-control-sm" id="sqft" placeholder="Sqft (above grade)">
+                                            </div>
+                                            <div class="col-4">
+                                                <input type="number" class="form-control form-control-sm" id="beds" placeholder="Beds">
+                                            </div>
+                                            <div class="col-4">
+                                                <input type="number" class="form-control form-control-sm" id="baths" placeholder="Baths" step="0.5">
+                                            </div>
+                                            <div class="col-4">
+                                                <input type="number" class="form-control form-control-sm" id="yearBuilt" placeholder="Year Built">
+                                            </div>
+                                            <div class="col-6">
+                                                <input type="number" class="form-control form-control-sm" id="basementSqft" placeholder="Finished Bsmt Sqft">
+                                            </div>
+                                            <div class="col-6">
+                                                <select class="form-select form-select-sm" id="basement">
+                                                    <option value="">Basement?</option>
+                                                    <option value="finished full">Finished Full</option>
+                                                    <option value="finished partial">Finished Partial</option>
+                                                    <option value="unfinished">Unfinished</option>
+                                                    <option value="walkout finished">Walkout Finished</option>
+                                                    <option value="none">None</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-6">
+                                                <input type="text" class="form-control form-control-sm" id="lotSize" placeholder="Lot Size">
+                                            </div>
+                                            <div class="col-6">
+                                                <select class="form-select form-select-sm" id="condition">
+                                                    <option value="">Condition?</option>
+                                                    <option value="excellent">Excellent</option>
+                                                    <option value="good">Good</option>
+                                                    <option value="fair">Fair</option>
+                                                    <option value="poor">Poor</option>
+                                                    <option value="needs full rehab">Needs Full Rehab</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <button type="submit" class="btn btn-primary w-100" id="analyzeBtn">
@@ -152,13 +208,21 @@
                         </div>
                     </div>
 
+                    <!-- Flip Analysis -->
+                    <div class="card mb-3 d-none" id="flipAnalysisCard">
+                        <div class="card-header">
+                            <h5 class="mb-0">Flip / Investment Analysis</h5>
+                        </div>
+                        <div class="card-body" id="flipAnalysisResults">
+                        </div>
+                    </div>
+
                     <!-- AI Recommendations -->
                     <div class="card">
                         <div class="card-header">
                             <h5 class="mb-0">AI Recommendations</h5>
                         </div>
                         <div class="card-body" id="aiRecommendations">
-                            <!-- AI recommendations will be populated here -->
                         </div>
                     </div>
                 </div>
@@ -207,24 +271,73 @@
                 updateProgress(80, 'Generating AI analysis...');
                 await delay(1000);
                 
-                // Make API request
-                const response = await fetch('/analyze', {
+                // Gather manual input fields
+                const manualData = {
+                    address: address,
+                    analysis_type: analysisType,
+                    price: document.getElementById('price').value || undefined,
+                    sqft: document.getElementById('sqft').value || undefined,
+                    beds: document.getElementById('beds').value || undefined,
+                    baths: document.getElementById('baths').value || undefined,
+                    year_built: document.getElementById('yearBuilt').value || undefined,
+                    sqft_finished_basement: document.getElementById('basementSqft').value || undefined,
+                    basement: document.getElementById('basement').value || undefined,
+                    lot_size: document.getElementById('lotSize').value || undefined,
+                    condition: document.getElementById('condition').value || undefined,
+                };
+                // Remove undefined keys
+                Object.keys(manualData).forEach(k => manualData[k] === undefined && delete manualData[k]);
+
+                const endpoint = analysisType === 'flip' ? '/flip-analysis' : '/analyze';
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        address: address,
-                        analysis_type: analysisType
-                    })
+                    body: JSON.stringify(manualData)
                 });
                 
                 const data = await response.json();
                 
                 if (response.ok) {
-                    updateProgress(100, 'Analysis complete!');
-                    await delay(500);
-                    displayResults(data);
+                    // Check if we got meaningful property data
+                    const prop = data.property_data || {};
+                    const isReal = (v) => v && v !== 'None' && v !== null && v !== 'null';
+                    const hasPrice = isReal(prop.price);
+                    const hasBeds = isReal(prop.beds);
+                    const hasSqft = isReal(prop.sqft);
+                    const hasManualData = Object.keys(manualData).some(k =>
+                        !['address','analysis_type'].includes(k) && manualData[k]
+                    );
+                    const missingCount = [!hasPrice, !hasBeds, !hasSqft].filter(Boolean).length;
+
+                    // Show warning if key fields are missing and no manual override
+                    if (missingCount >= 2 && !hasManualData) {
+                        updateProgress(100, 'Partial data — add details manually for better accuracy');
+                        await delay(500);
+                        // Auto-expand manual details panel
+                        const manualPanel = document.getElementById('manualDetails');
+                        if (!manualPanel.classList.contains('show')) {
+                            new bootstrap.Collapse(manualPanel, {show: true});
+                        }
+                        const missing = [];
+                        if (!hasPrice) missing.push('price');
+                        if (!hasBeds) missing.push('beds/baths');
+                        if (!hasSqft) missing.push('square footage');
+                        showError(
+                            'Scraping got limited data (missing: ' + missing.join(', ') + '). ' +
+                            'The manual input panel has been opened — fill in the property details you know and re-run for accurate results.'
+                        );
+                    } else {
+                        updateProgress(100, 'Analysis complete!');
+                        await delay(500);
+                    }
+                    // Always show results
+                    if (analysisType === 'flip') {
+                        displayFlipResults(data);
+                    } else {
+                        displayResults(data);
+                    }
                     addToRecentSearches(address);
                 } else {
                     showError(data.error || 'Analysis failed');
@@ -272,137 +385,165 @@
         }
         
         function displayResults(data) {
-            // Hide welcome message and show results
             document.getElementById('welcomeMessage').classList.add('d-none');
             document.getElementById('resultsContainer').classList.remove('d-none');
             document.getElementById('errorContainer').classList.add('d-none');
-            
-            // Update timestamp
             document.getElementById('analysisTimestamp').textContent = new Date().toLocaleString();
-            
-            // Get the analysis data
+
             const property = data.property_data || {};
             const comparables = data.comparables || [];
             const analysis = data.analysis || {};
-            
-            // Populate property summary
+            const valuation = analysis.valuation || {};
+
+            // Data source indicator
+            const srcBadge = property.data_source === 'manual'
+                ? '<span class="badge bg-info">Manual Input</span>'
+                : '<span class="badge bg-secondary">Scraped</span>';
+
+            // Missing data warning
+            const missingFields = [];
+            if (!property.beds) missingFields.push('beds');
+            if (!property.baths) missingFields.push('baths');
+            if (!property.sqft) missingFields.push('sqft');
+            if (!property.year_built) missingFields.push('year built');
+            const missingWarning = missingFields.length > 0
+                ? `<div class="alert alert-warning py-2 mt-2"><small>Missing: ${missingFields.join(', ')} — add via manual input for better accuracy</small></div>`
+                : '';
+
+            // Property summary with all fields
+            let detailsRow2 = '';
+            if (property.year_built || property.basement || property.condition || property.total_living_sqft) {
+                detailsRow2 = '<div class="row mt-2">';
+                if (property.year_built) detailsRow2 += `<div class="col-md-3"><div class="property-feature"><h4>${property.year_built}</h4><small>Year Built</small></div></div>`;
+                if (property.basement) detailsRow2 += `<div class="col-md-3"><div class="property-feature"><h4>${property.basement}</h4><small>Basement</small></div></div>`;
+                if (property.sqft_finished_basement) detailsRow2 += `<div class="col-md-3"><div class="property-feature"><h4>${formatNumber(property.sqft_finished_basement)}</h4><small>Fin. Bsmt Sqft</small></div></div>`;
+                if (property.total_living_sqft) detailsRow2 += `<div class="col-md-3"><div class="property-feature"><h4>${formatNumber(property.total_living_sqft)}</h4><small>Total Living Sqft</small></div></div>`;
+                if (property.condition) detailsRow2 += `<div class="col-md-3"><div class="property-feature"><h4>${property.condition}</h4><small>Condition</small></div></div>`;
+                if (property.lot_size) detailsRow2 += `<div class="col-md-3"><div class="property-feature"><h4>${property.lot_size}</h4><small>Lot Size</small></div></div>`;
+                detailsRow2 += '</div>';
+            }
+
             document.getElementById('propertySummary').innerHTML = `
                 <div class="row">
                     <div class="col-md-8">
-                        <h6>${data.address}</h6>
-                        <p class="text-muted mb-3">${analysis.executive_summary || 'Property analysis completed'}</p>
+                        <h6>${data.address} ${srcBadge}</h6>
+                        <p class="text-muted mb-2">${analysis.executive_summary || 'Property analysis completed'}</p>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4 text-end">
                         <span class="badge bg-success">${data.status}</span>
                     </div>
                 </div>
+                ${missingWarning}
                 <div class="row">
-                    <div class="col-md-3">
-                        <div class="property-feature">
-                            <h4>${property.price ? '$' + formatNumber(property.price) : 'N/A'}</h4>
-                            <small>Listed Price</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="property-feature">
-                            <h4>${property.beds || 'N/A'}</h4>
-                            <small>Bedrooms</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="property-feature">
-                            <h4>${property.baths || 'N/A'}</h4>
-                            <small>Bathrooms</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="property-feature">
-                            <h4>${property.sqft ? formatNumber(property.sqft) : 'N/A'}</h4>
-                            <small>Square Feet</small>
-                        </div>
-                    </div>
+                    <div class="col-md-3"><div class="property-feature"><h4>${property.price ? '$' + formatNumber(property.price) : 'N/A'}</h4><small>Listed Price</small></div></div>
+                    <div class="col-md-3"><div class="property-feature"><h4>${property.beds || 'N/A'}</h4><small>Bedrooms</small></div></div>
+                    <div class="col-md-3"><div class="property-feature"><h4>${property.baths || 'N/A'}</h4><small>Bathrooms</small></div></div>
+                    <div class="col-md-3"><div class="property-feature"><h4>${property.sqft ? formatNumber(property.sqft) : 'N/A'}</h4><small>Sqft (Above Grade)</small></div></div>
                 </div>
+                ${detailsRow2}
             `;
-            
-            // Populate valuation results
-            const valuation = analysis.valuation || {};
+
+            // Valuation
+            const rawFmv = valuation.estimated_fair_market_value || valuation.estimated_value || '';
+            const fmvFormatted = rawFmv ? formatNumber(rawFmv) : null;
+            const fmvDisplay = (fmvFormatted && fmvFormatted !== 'N/A') ? '$' + fmvFormatted : (rawFmv || 'Needs more data');
+            const rangeText = (valuation.value_range_low && valuation.value_range_high)
+                ? '$' + formatNumber(valuation.value_range_low) + ' - $' + formatNumber(valuation.value_range_high)
+                : (valuation.value_range || '');
+            const priceVsValue = valuation.price_vs_value || '';
+
             document.getElementById('valuationResults').innerHTML = `
                 <div class="row">
-                    <div class="col-md-6">
-                        <h6>Estimated Value</h6>
-                        <p class="h4 text-primary">${valuation.estimated_value || 'Analysis in progress'}</p>
-                        <p class="text-muted">${valuation.value_range || ''}</p>
+                    <div class="col-md-4">
+                        <h6>Est. Fair Market Value</h6>
+                        <p class="h4 text-primary">${fmvDisplay}</p>
+                        <p class="text-muted small">${rangeText}</p>
                     </div>
-                    <div class="col-md-6">
-                        <h6>Confidence Level</h6>
-                        <p class="h5">${valuation.confidence_level || 'Medium'}</p>
-                        <p class="text-muted">Based on available data and comparables</p>
+                    <div class="col-md-4">
+                        <h6>Price vs Value</h6>
+                        <p class="h6">${priceVsValue || 'N/A'}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Confidence</h6>
+                        <p class="h6">${valuation.confidence_level || 'Medium'}</p>
                     </div>
                 </div>
+                ${valuation.methodology ? '<p class="text-muted small mt-2"><strong>Method:</strong> ' + valuation.methodology + '</p>' : ''}
                 ${analysis.pricing_strategy ? `
-                <div class="mt-3">
-                    <h6>Pricing Strategy</h6>
-                    <p><strong>Suggested List Price:</strong> ${analysis.pricing_strategy.suggested_list_price || 'TBD'}</p>
-                    <p class="text-muted">${analysis.pricing_strategy.pricing_rationale || ''}</p>
-                </div>
-                ` : ''}
+                <hr>
+                <div class="row">
+                    <div class="col-md-4"><h6>Suggested List Price</h6><p class="h5">${(() => { const v = formatNumber(analysis.pricing_strategy.suggested_list_price); return v === 'N/A' ? 'N/A' : '$' + v; })()}</p></div>
+                    <div class="col-md-4"><h6>Est. Days to Sell</h6><p>${analysis.pricing_strategy.days_to_sell_estimate || 'N/A'}</p></div>
+                    <div class="col-md-4"><p class="text-muted small">${analysis.pricing_strategy.pricing_rationale || ''}</p></div>
+                </div>` : ''}
+                ${analysis.data_quality_notes ? '<div class="alert alert-info py-2 mt-2"><small><strong>Data Quality:</strong> ' + analysis.data_quality_notes + '</small></div>' : ''}
             `;
-            
-            // Populate comparables
+
+            // Comparables with grades from Claude
+            const compAnalysis = (analysis.comparable_analysis || {}).comps_used || [];
             if (comparables.length > 0) {
-                let compHtml = '';
-                comparables.forEach((comp, index) => {
-                    const grade = 'B'; // Default grade
+                let compHtml = '<p class="text-muted small mb-2">Distressed sales filtered out (foreclosure, probate, short sale, etc.)</p>';
+                comparables.forEach((comp, idx) => {
+                    const aiComp = compAnalysis[idx] || {};
+                    const grade = aiComp.similarity_grade || 'B';
+                    const gradeClass = grade.startsWith('A') ? 'a' : grade.startsWith('B') ? 'b' : 'c';
                     compHtml += `
                         <div class="comparable-item mb-3">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <h6>${comp.address}</h6>
-                                    <p class="mb-1">
-                                        <strong>$${formatNumber(comp.sale_price)}</strong> • 
-                                        ${comp.beds} bed, ${comp.baths} bath • 
-                                        ${formatNumber(comp.sqft)} sqft
-                                    </p>
-                                    <small class="text-muted">Distance: ${comp.distance_miles || 'Unknown'} miles</small>
+                                    <h6>${comp.address} <span class="badge bg-secondary">${comp.sale_type || 'standard'}</span></h6>
+                                    <p class="mb-1"><strong>$${formatNumber(comp.sale_price)}</strong> | ${comp.beds || '?'} bed, ${comp.baths || '?'} bath | ${comp.sqft ? formatNumber(comp.sqft) + ' sqft' : 'sqft N/A'}</p>
+                                    ${aiComp.adjustments ? '<small class="text-muted">Adj: ' + aiComp.adjustments + '</small>' : ''}
+                                    ${aiComp.adjusted_value ? '<br><small><strong>Adjusted: ' + aiComp.adjusted_value + '</strong></small>' : ''}
                                 </div>
-                                <div>
-                                    <span class="comparable-grade grade-${grade.toLowerCase()}">${grade}</span>
-                                </div>
+                                <div><span class="comparable-grade grade-${gradeClass}">${grade}</span></div>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 });
+                if ((analysis.comparable_analysis || {}).comp_quality_score) {
+                    compHtml += '<p class="text-muted small mt-2"><strong>Comp Quality:</strong> ' + analysis.comparable_analysis.comp_quality_score + '</p>';
+                }
                 document.getElementById('comparablesResults').innerHTML = compHtml;
             } else {
-                document.getElementById('comparablesResults').innerHTML = '<p class="text-muted">No comparable properties found</p>';
+                document.getElementById('comparablesResults').innerHTML = '<p class="text-muted">No arm\'s-length comparable sales found. Analysis uses Claude AI market knowledge.</p>';
             }
             
-            // Populate market insights
-            const marketAnalysis = analysis.market_analysis || {};
+            // Market insights - enhanced
+            const ma = analysis.market_analysis || {};
             document.getElementById('marketInsights').innerHTML = `
-                <div class="row">
-                    <div class="col-md-6">
+                <div class="row g-2 mb-3">
+                    <div class="col-md-4">
                         <div class="market-indicator">
                             <div class="market-indicator-icon trend-up">📈</div>
-                            <div>
-                                <h6>Market Trend</h6>
-                                <p class="mb-0">${marketAnalysis.market_trend || 'Stable market conditions'}</p>
-                            </div>
+                            <div><h6 class="mb-0">Trend</h6><p class="mb-0 small">${ma.market_trend || 'N/A'}</p></div>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="market-indicator">
                             <div class="market-indicator-icon trend-stable">📊</div>
-                            <div>
-                                <h6>Price per Sq Ft</h6>
-                                <p class="mb-0">${marketAnalysis.price_per_sqft || 'Calculating...'}</p>
-                            </div>
+                            <div><h6 class="mb-0">Avg $/Sqft</h6><p class="mb-0 small">${ma.avg_price_per_sqft || ma.price_per_sqft || 'N/A'}</p></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="market-indicator">
+                            <div class="market-indicator-icon trend-stable">🏠</div>
+                            <div><h6 class="mb-0">Median Price</h6><p class="mb-0 small">${ma.median_price_area || 'N/A'}</p></div>
                         </div>
                     </div>
                 </div>
-                <div class="mt-3">
-                    <p class="text-muted">${marketAnalysis.market_position || 'Market position analysis completed'}</p>
+                <div class="row g-2">
+                    <div class="col-md-4"><small><strong>Avg DOM:</strong> ${ma.avg_days_on_market || 'N/A'}</small></div>
+                    <div class="col-md-4"><small><strong>Inventory:</strong> ${ma.inventory_level || 'N/A'}</small></div>
+                    <div class="col-md-4"><small><strong>Position:</strong> ${ma.market_position || 'N/A'}</small></div>
                 </div>
+                ${analysis.investment_analysis ? `
+                <hr>
+                <div class="row g-2">
+                    <div class="col-md-3"><small><strong>Rental Est:</strong> ${analysis.investment_analysis.rental_potential || 'N/A'}</small></div>
+                    <div class="col-md-3"><small><strong>Cap Rate:</strong> ${analysis.investment_analysis.cap_rate_estimate || 'N/A'}</small></div>
+                    <div class="col-md-3"><small><strong>Appreciation:</strong> ${analysis.investment_analysis.appreciation_outlook || 'N/A'}</small></div>
+                    <div class="col-md-3"><small><strong>Grade:</strong> ${analysis.investment_analysis.investment_grade || 'N/A'}</small></div>
+                </div>` : ''}
             `;
             
             // Populate AI recommendations
@@ -434,13 +575,16 @@
         }
         
         function formatNumber(num) {
-            if (!num) return 'N/A';
-            return parseInt(num).toLocaleString();
+            if (num === null || num === undefined || num === '' || num === 'None' || num === 'Unknown') return 'N/A';
+            // Handle strings that might have $ or , in them
+            const cleaned = String(num).replace(/[$,\s]/g, '');
+            const parsed = parseFloat(cleaned);
+            if (isNaN(parsed)) return String(num); // Return as-is if not a number (e.g. "150000-200000")
+            return Math.round(parsed).toLocaleString();
         }
         
         function showError(message) {
             document.getElementById('welcomeMessage').classList.add('d-none');
-            document.getElementById('resultsContainer').classList.add('d-none');
             document.getElementById('errorContainer').classList.remove('d-none');
             document.getElementById('errorMessage').textContent = message;
         }
@@ -481,6 +625,122 @@
             return new Promise(resolve => setTimeout(resolve, ms));
         }
         
+        function displayFlipResults(data) {
+            document.getElementById('welcomeMessage').classList.add('d-none');
+            document.getElementById('resultsContainer').classList.remove('d-none');
+            document.getElementById('errorContainer').classList.add('d-none');
+            document.getElementById('analysisTimestamp').textContent = new Date().toLocaleString();
+
+            const property = data.property_data || {};
+            const metrics = data.flip_metrics || {};
+            const fa = data.flip_analysis || {};
+            const arv = fa.arv_assessment || {};
+            const acq = fa.acquisition_analysis || {};
+            const fin = fa.financial_summary || {};
+            const reno = fa.renovation_scope || {};
+
+            // Determine badge color from recommendation
+            const rec = (fa.recommendation || '').toLowerCase();
+            const badgeClass = (rec === 'strong_buy' || rec === 'buy') ? 'bg-success' : rec === 'consider' ? 'bg-warning' : 'bg-danger';
+
+            // Property summary with Claude's ARV (not the formula one)
+            document.getElementById('propertySummary').innerHTML = `
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <h6>${data.address}</h6>
+                        <p class="mb-1">${fa.flip_score ? '<strong>Flip Score: ' + fa.flip_score + '</strong>' : ''}</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <span class="badge ${badgeClass} fs-6">${(fa.recommendation || 'N/A').toUpperCase()}</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3"><div class="property-feature"><h4>$${formatNumber(metrics.purchase_price)}</h4><small>Asking Price</small></div></div>
+                    <div class="col-md-3"><div class="property-feature"><h4>${arv.estimated_arv || '$' + formatNumber(metrics.estimated_arv)}</h4><small>AI-Estimated ARV</small></div></div>
+                    <div class="col-md-3"><div class="property-feature"><h4>${acq.max_allowable_offer || 'N/A'}</h4><small>Max Offer (70% Rule)</small></div></div>
+                    <div class="col-md-3"><div class="property-feature"><h4>${fin.expected_profit || '$' + formatNumber(metrics.potential_profit)}</h4><small>Expected Profit</small></div></div>
+                </div>
+            `;
+
+            // Deal breakers alert
+            let dealBreakerHtml = '';
+            if (fa.deal_breakers && fa.deal_breakers.length) {
+                dealBreakerHtml = '<div class="alert alert-danger mb-3"><h6>Deal Breakers</h6><ul class="mb-0">' +
+                    fa.deal_breakers.map(d => '<li>' + d + '</li>').join('') + '</ul></div>';
+            }
+
+            // Acquisition analysis
+            let acqHtml = '';
+            if (acq.max_allowable_offer) {
+                acqHtml = `<div class="card mb-3 border-start-primary"><div class="card-body">
+                    <h6>Acquisition Analysis</h6>
+                    <p><strong>Max Allowable Offer:</strong> ${acq.max_allowable_offer}</p>
+                    <p><strong>Is Asking Price Viable:</strong> ${acq.is_asking_price_viable}</p>
+                    <p><strong>Negotiation Target:</strong> ${acq.negotiation_target}</p>
+                </div></div>`;
+            }
+
+            // Financial summary table
+            document.getElementById('valuationResults').innerHTML = `
+                ${dealBreakerHtml}
+                ${acqHtml}
+                <h6>Financial Breakdown</h6>
+                <table class="table table-sm">
+                    <tr><td>Asking Price</td><td class="text-end">$${formatNumber(metrics.purchase_price)}</td></tr>
+                    <tr><td>Renovation (${reno.scope_level || 'est.'})</td><td class="text-end">${reno.estimated_cost_low || '$' + formatNumber(metrics.estimated_renovation)} - ${reno.estimated_cost_high || ''}</td></tr>
+                    <tr><td>Holding Costs</td><td class="text-end">$${formatNumber(metrics.holding_costs)}</td></tr>
+                    <tr><td>Selling Costs</td><td class="text-end">$${formatNumber(metrics.selling_costs)}</td></tr>
+                    <tr class="fw-bold"><td>Total Cash Needed</td><td class="text-end">${fin.cash_needed || '$' + formatNumber(metrics.total_investment)}</td></tr>
+                    <tr class="fw-bold table-info"><td>AI-Estimated ARV</td><td class="text-end">${arv.estimated_arv || '$' + formatNumber(metrics.estimated_arv)}</td></tr>
+                    <tr class="fw-bold"><td>Expected Profit</td><td class="text-end">${fin.expected_profit || '$' + formatNumber(metrics.potential_profit)}</td></tr>
+                    <tr><td>Best Case</td><td class="text-end">${fin.best_case_profit || 'N/A'}</td></tr>
+                    <tr><td>Worst Case</td><td class="text-end">${fin.worst_case_profit || 'N/A'}</td></tr>
+                    <tr class="fw-bold"><td>Expected ROI</td><td class="text-end">${fin.expected_roi || metrics.roi_percentage + '%'}</td></tr>
+                </table>
+                ${arv.arv_methodology ? '<p class="text-muted small"><strong>ARV Methodology:</strong> ' + arv.arv_methodology + '</p>' : ''}
+                ${arv.arv_confidence ? '<p class="text-muted small"><strong>ARV Confidence:</strong> ' + arv.arv_confidence + '</p>' : ''}
+            `;
+
+            // Flip analysis card - renovation details
+            const flipCard = document.getElementById('flipAnalysisCard');
+            flipCard.classList.remove('d-none');
+            let flipHtml = '';
+
+            if (reno.priority_items && reno.priority_items.length) {
+                flipHtml += `<h6>Renovation Scope: ${reno.scope_level || ''} (${reno.timeline_months || 'TBD'})</h6>`;
+                flipHtml += '<ul>' + reno.priority_items.map(i => '<li>' + i + '</li>').join('') + '</ul>';
+            }
+
+            if (fa.risks && fa.risks.length) {
+                flipHtml += '<h6 class="mt-3">Risk Factors</h6><ul class="text-danger">' + fa.risks.map(r => '<li>' + r + '</li>').join('') + '</ul>';
+            }
+            if (fa.exit_strategies && fa.exit_strategies.length) {
+                flipHtml += '<h6 class="mt-3">Exit Strategies</h6><ul>' + fa.exit_strategies.map(s => '<li>' + s + '</li>').join('') + '</ul>';
+            }
+            if (fa.raw_analysis) {
+                flipHtml += '<div class="alert alert-info"><pre style="white-space:pre-wrap">' + fa.raw_analysis.substring(0, 1500) + '</pre></div>';
+            }
+            document.getElementById('flipAnalysisResults').innerHTML = flipHtml || '<p class="text-muted">Detailed analysis not available</p>';
+
+            // Comparables
+            const comparables = data.comparables || [];
+            if (comparables.length > 0) {
+                let compHtml = '<p class="text-muted small mb-2">Distressed sales (foreclosure, probate, short sale) filtered out</p>';
+                comparables.forEach(comp => {
+                    compHtml += `<div class="comparable-item mb-3">
+                        <h6>${comp.address} <span class="badge bg-secondary">${comp.sale_type || 'standard'}</span></h6>
+                        <p class="mb-1"><strong>$${formatNumber(comp.sale_price)}</strong> | ${comp.beds || '?'} bed, ${comp.baths || '?'} bath | ${comp.sqft ? formatNumber(comp.sqft) + ' sqft' : 'sqft N/A'}</p>
+                    </div>`;
+                });
+                document.getElementById('comparablesResults').innerHTML = compHtml;
+            } else {
+                document.getElementById('comparablesResults').innerHTML = '<p class="text-muted">No arm\'s-length comparable sales found. Claude AI used market knowledge for valuation.</p>';
+            }
+
+            document.getElementById('marketInsights').innerHTML = '<p>' + (fa.market_factors || 'Market analysis included in flip evaluation') + '</p>';
+            document.getElementById('aiRecommendations').innerHTML = '<p class="h5">Flip Score: ' + (fa.flip_score || 'N/A') + '</p>';
+        }
+
         // Load recent searches on page load
         document.addEventListener('DOMContentLoaded', updateRecentSearches);
     </script>

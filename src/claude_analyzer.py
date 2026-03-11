@@ -23,7 +23,7 @@ class ClaudeAnalyzer:
         self.api_key = api_key or os.getenv('ANTHROPIC_API_KEY')
         self.client = Anthropic(api_key=self.api_key) if self.api_key else None
     
-    def analyze_property_value(self, property_data: Dict, comparables: List[Dict]) -> Dict:
+    def analyze_property_value(self, property_data: Dict, comparables: List[Dict], market_data: Optional[Dict] = None) -> Dict:
         """Analyze property value using comparable sales and market data"""
         if not self.client:
             return {"error": "Claude API key not configured"}
@@ -36,6 +36,9 @@ class ClaudeAnalyzer:
 
         COMPARABLE SALES:
         {json.dumps(comparables, indent=2)}
+
+        MARKET DATA:
+        {json.dumps(market_data or {}, indent=2)}
 
         Please provide a comprehensive analysis including:
 
@@ -80,79 +83,140 @@ class ClaudeAnalyzer:
         """Perform complete property analysis using scraped data"""
         if not self.client:
             return {"error": "Claude API key not configured"}
-        
+
         property_data = scraped_data.get('property', {})
         comparables = scraped_data.get('comparables', [])
-        
-        # Create a more focused and actionable prompt
+
         prompt = f"""
-        You are an expert real estate analyst. Analyze this property and provide actionable insights.
+        You are a licensed real estate appraiser performing a Comparative Market Analysis (CMA).
+        You must follow standard appraisal methodology and provide defensible valuations.
+
+        CRITICAL RULES FOR COMPARABLE SELECTION & ANALYSIS:
+        1. EXCLUDE any sale that appears to be: foreclosure, probate, short sale, bank-owned/REO,
+           estate sale, auction, tax sale, sheriff sale, or any non-arm's-length transaction.
+           These distressed sales do NOT reflect fair market value.
+        2. Only use standard arm's-length transactions between willing buyer and seller.
+        3. Comps should be:
+           - Within 1 mile (ideal) to 3 miles (maximum) of subject
+           - Sold within last 6 months (ideal) to 12 months (maximum)
+           - Similar size: within 20-25% of subject sqft
+           - Similar bed/bath count: within +-1 bed, +-1 bath
+           - Same property type (single family vs condo vs townhouse)
+        4. Apply standard adjustments for differences:
+           - Location (neighborhood quality, street, lot)
+           - Size (price per sqft adjustment)
+           - Condition and age
+           - Bed/bath count differences
+           - Garage, basement, lot size, upgrades
+        5. Weight adjusted comp values by quality (best comps get more weight).
+        6. Use your knowledge of {property_data.get('address', 'this area')} to supplement
+           the provided comps with your understanding of local market conditions.
+
+        IMPORTANT - FINISHED BASEMENT / BELOW-GRADE LIVING SPACE:
+        - Zillow's listed sqft often only reflects ABOVE-GRADE living area
+        - Finished basements add significant value but are NOT always in the sqft count
+        - If a property has a finished basement, the total living space may be 30-60% larger
+          than the listed sqft, which dramatically affects $/sqft and overall value
+        - When comparing comps, adjust for whether comps include or exclude basement sqft
+        - A property with finished basement is worth MORE than one without, even at same listed sqft
+        - Do NOT undervalue properties just because comps without basements sold for less
+
+        VALUATION BIAS CHECK:
+        - Do NOT assume asking price is overpriced. Many properties sell AT or ABOVE asking.
+        - If comps are smaller, older, or inferior quality, adjust UPWARD for the subject property
+        - Consider the full picture: location, condition, upgrades, finished space, lot size
+        - When data is limited, lean on market knowledge but acknowledge uncertainty rather
+          than defaulting to a lower valuation
 
         SUBJECT PROPERTY:
         Address: {property_data.get('address', 'Unknown')}
-        Price: ${property_data.get('price', 'Unknown')}
+        Listed/Asking Price: ${property_data.get('price', 'Unknown')}
         Beds: {property_data.get('beds', 'Unknown')}
         Baths: {property_data.get('baths', 'Unknown')}
-        Square Feet: {property_data.get('sqft', 'Unknown')}
+        Square Feet (above grade): {property_data.get('sqft', 'Unknown')}
+        Finished Basement Sqft: {property_data.get('sqft_finished_basement', 'Unknown')}
+        Total Living Sqft (incl basement): {property_data.get('total_living_sqft', 'Unknown')}
+        Basement: {property_data.get('basement', 'Unknown')}
         Zestimate: {property_data.get('zestimate', 'Unknown')}
-        Description: {(property_data.get('description') or 'No description available')[:200]}
+        Year Built: {property_data.get('year_built', 'Unknown')}
+        Description: {(property_data.get('description') or 'No description available')[:300]}
 
-        COMPARABLE SALES:
+        SCRAPED COMPARABLE SALES (pre-filtered to remove obvious distressed sales):
         {self._format_comparables_for_analysis(comparables)}
 
-        Please provide a comprehensive analysis in JSON format with these exact keys:
+        NOTE: If the provided comps are insufficient (too few, too different, or suspicious),
+        use your knowledge of the local market to provide additional context and adjust accordingly.
+        State clearly when you are supplementing with market knowledge vs using provided data.
+        If the property has a finished basement, factor that into valuation - it adds real value.
+
+        Respond in JSON format with these exact keys:
 
         {{
-            "executive_summary": "Brief 2-3 sentence overview of the property and opportunity",
+            "executive_summary": "2-3 sentence overview with key finding on value vs asking price",
             "property_overview": {{
-                "condition_assessment": "Assessment based on description and photos",
-                "key_features": ["List of notable features"],
+                "condition_assessment": "Based on description, age, and price signals",
+                "key_features": ["Notable features"],
                 "property_type": "Single family/Condo/etc"
             }},
             "market_analysis": {{
-                "market_trend": "Current trend assessment",
-                "price_per_sqft": "Calculated if possible",
-                "market_position": "How this property compares to market"
+                "market_trend": "Specific trend for this neighborhood/city with data points",
+                "median_price_area": "Median home price for this area",
+                "avg_price_per_sqft": "Average $/sqft for comparable homes in area",
+                "avg_days_on_market": "Estimated DOM for this area",
+                "inventory_level": "buyer's/seller's/balanced market with reasoning",
+                "market_position": "How this property compares (above/below/at market)"
             }},
             "comparable_analysis": {{
-                "comp_summary": "Summary of comparable properties",
-                "price_adjustments": "Adjustments needed for differences",
-                "reliability_score": "A/B/C rating for comp quality"
+                "comps_used": [
+                    {{
+                        "address": "comp address",
+                        "sale_price": "price",
+                        "sale_type": "arm's-length / EXCLUDED-reason",
+                        "similarity_grade": "A/B/C",
+                        "adjustments": "specific $ adjustments applied and why",
+                        "adjusted_value": "price after adjustments"
+                    }}
+                ],
+                "comps_excluded": ["list any comps excluded and why (distressed, too different, etc.)"],
+                "comp_quality_score": "A/B/C rating for overall comp set quality with reasoning"
             }},
             "valuation": {{
-                "estimated_value": "Your estimated fair market value",
-                "value_range": "Low to high range",
-                "confidence_level": "High/Medium/Low with reasoning"
+                "estimated_fair_market_value": "Your FMV estimate as a number",
+                "value_range_low": "Conservative estimate",
+                "value_range_high": "Optimistic estimate",
+                "price_vs_value": "Is asking price above/below/at FMV and by how much %",
+                "confidence_level": "High/Medium/Low with specific reasoning",
+                "methodology": "Brief explanation of how you arrived at this value"
             }},
-            "listing_description": "Compelling 2-3 paragraph marketing description",
             "pricing_strategy": {{
-                "suggested_list_price": "Recommended listing price",
-                "pricing_rationale": "Why this price makes sense",
-                "market_timing": "Best time to list"
+                "suggested_list_price": "Recommended listing price if selling",
+                "pricing_rationale": "Why this price - reference comps and market",
+                "days_to_sell_estimate": "Estimated days on market at this price"
             }},
             "investment_analysis": {{
-                "rental_potential": "Estimated monthly rent if applicable",
-                "appreciation_outlook": "Future value prospects",
-                "investment_grade": "A-F rating as investment"
+                "rental_potential": "Estimated monthly rent with reasoning",
+                "cap_rate_estimate": "Estimated cap rate",
+                "appreciation_outlook": "1-3-5 year outlook with reasoning",
+                "investment_grade": "A-F rating with explanation"
             }},
-            "recommendations": ["List of 3-5 specific action items"],
-            "risk_factors": ["List of potential concerns or red flags"]
+            "recommendations": ["3-5 specific, actionable items"],
+            "risk_factors": ["Specific risks with this property/market"],
+            "data_quality_notes": "Note any limitations in the analysis due to missing data"
         }}
 
-        Use your real estate knowledge to provide meaningful insights even if some data is missing.
-        Be specific with numbers and percentages where possible.
-        Focus on actionable advice for buyers, sellers, or investors.
+        Be precise with dollar amounts. Do not hedge excessively - give your best professional estimate.
         """
-        
+
         return self._make_request(prompt)
     
     def _format_comparables_for_analysis(self, comparables: List[Dict]) -> str:
-        """Format comparable properties for Claude analysis"""
+        """Format comparable properties for Claude analysis with quality indicators"""
         if not comparables:
-            return "No comparable properties found"
-        
+            return "No comparable properties found from scraping. Use your market knowledge to provide analysis."
+
         formatted = []
-        for i, comp in enumerate(comparables[:5], 1):
+        for i, comp in enumerate(comparables[:8], 1):
+            sale_type = comp.get('sale_type', 'unknown')
             comp_text = f"""
             Comp {i}:
             - Address: {comp.get('address', 'Unknown')}
@@ -160,10 +224,13 @@ class ClaudeAnalyzer:
             - Beds: {comp.get('beds', 'Unknown')}
             - Baths: {comp.get('baths', 'Unknown')}
             - Sqft: {comp.get('sqft', 'Unknown')}
+            - Sale Type: {sale_type}
             - Distance: {comp.get('distance_miles', 'Unknown')} miles
+            - Sale Date: {comp.get('sale_date', 'Unknown')}
             """
             formatted.append(comp_text.strip())
-        
+
+        formatted.append(f"\nTotal comps provided: {len(comparables)} (pre-filtered to exclude distressed sales)")
         return "\n".join(formatted)
     
     def generate_listing_description(self, property_data: Dict, analysis: Dict) -> Dict:
@@ -270,13 +337,131 @@ class ClaudeAnalyzer:
         
         return self._make_request(prompt)
     
+    def analyze_flip_potential(self, property_data: Dict, comparables: List[Dict]) -> Dict:
+        """Analyze property for flip/investment potential with financial metrics"""
+        if not self.client:
+            return {"error": "Claude API key not configured"}
+
+        # Calculate basic financial metrics locally
+        price = property_data.get('price')
+        sqft = property_data.get('sqft')
+
+        flip_metrics = {}
+        if price:
+            try:
+                purchase_price = float(str(price).replace(',', ''))
+                renovation_cost = purchase_price * 0.15
+                holding_costs = purchase_price * 0.02
+                selling_costs = purchase_price * 0.06
+                arv_70_rule = purchase_price / 0.7
+                arv_market = purchase_price * 1.3
+                arv = max(arv_70_rule, arv_market)
+                total_investment = purchase_price + renovation_cost + holding_costs + selling_costs
+                potential_profit = arv - total_investment
+                roi = (potential_profit / total_investment) * 100 if total_investment > 0 else 0
+
+                flip_metrics = {
+                    "purchase_price": round(purchase_price),
+                    "estimated_renovation": round(renovation_cost),
+                    "holding_costs": round(holding_costs),
+                    "selling_costs": round(selling_costs),
+                    "total_investment": round(total_investment),
+                    "estimated_arv": round(arv),
+                    "potential_profit": round(potential_profit),
+                    "roi_percentage": round(roi, 1),
+                    "price_per_sqft": round(purchase_price / float(sqft)) if sqft else None,
+                }
+            except (ValueError, TypeError):
+                pass
+
+        prompt = f"""
+        You are an experienced real estate investor analyzing a potential flip deal.
+        Provide a realistic, numbers-driven analysis. Do NOT use distressed sale prices as ARV targets.
+
+        CRITICAL: ARV (After Repair Value) must be based on:
+        - Recent arm's-length sales of RENOVATED/UPDATED properties in the same area
+        - NOT foreclosures, probate, short sales, or distressed transactions
+        - Properties in good/excellent condition (post-renovation comparable)
+        - Similar size, bed/bath count, and location to subject
+
+        SUBJECT PROPERTY:
+        Address: {property_data.get('address', 'Unknown')}
+        Asking Price: ${property_data.get('price', 'Unknown')}
+        Beds: {property_data.get('beds', 'Unknown')}
+        Baths: {property_data.get('baths', 'Unknown')}
+        Square Feet (above grade): {property_data.get('sqft', 'Unknown')}
+        Finished Basement Sqft: {property_data.get('sqft_finished_basement', 'Unknown')}
+        Total Living Sqft: {property_data.get('total_living_sqft', 'Unknown')}
+        Basement: {property_data.get('basement', 'Unknown')}
+        Year Built: {property_data.get('year_built', 'Unknown')}
+        Description: {(property_data.get('description') or 'No description')[:300]}
+
+        IMPORTANT: If the property has a finished basement, the ARV should reflect the TOTAL
+        living space, not just above-grade sqft. Finished basements in CT typically add $30-60/sqft
+        in value (less than above-grade but significant). Factor this into ARV calculation.
+
+        COMPARABLE SALES (pre-filtered, distressed sales removed):
+        {self._format_comparables_for_analysis(comparables)}
+
+        PRELIMINARY CALCULATED METRICS (verify and adjust these):
+        {json.dumps(flip_metrics, indent=2)}
+
+        The preliminary metrics use generic formulas (15% renovation, 70% rule).
+        Override these with your actual market knowledge for this specific area and property.
+
+        Provide flip analysis in JSON format:
+        {{
+            "flip_score": "1-10 rating with justification",
+            "recommendation": "strong_buy / buy / consider / pass",
+            "arv_assessment": {{
+                "estimated_arv": "Your ARV as a dollar amount",
+                "arv_per_sqft": "Target $/sqft for renovated property in this area",
+                "arv_methodology": "How you determined ARV - which comps, what adjustments",
+                "arv_confidence": "High/Medium/Low"
+            }},
+            "acquisition_analysis": {{
+                "max_allowable_offer": "Maximum you should pay using 70% rule",
+                "is_asking_price_viable": "Yes/No with reasoning",
+                "negotiation_target": "What to offer and why"
+            }},
+            "renovation_scope": {{
+                "estimated_cost_low": "Conservative reno budget",
+                "estimated_cost_high": "Full renovation budget",
+                "priority_items": ["specific renovation items with estimated costs"],
+                "timeline_months": "realistic timeline",
+                "scope_level": "cosmetic / moderate / full gut"
+            }},
+            "financial_summary": {{
+                "total_cost_in": "Purchase + reno + holding + closing",
+                "expected_arv": "After repair value",
+                "expected_profit": "Most likely profit",
+                "best_case_profit": "optimistic scenario with assumptions",
+                "worst_case_profit": "conservative scenario with assumptions",
+                "expected_roi": "ROI percentage",
+                "cash_needed": "Total cash required"
+            }},
+            "deal_breakers": ["Any absolute no-go factors"],
+            "market_factors": "Local market conditions affecting this flip - be specific",
+            "risks": ["Specific risk factors ranked by severity"],
+            "exit_strategies": ["Ranked exit options if flip doesn't work"]
+        }}
+
+        Be specific with dollar amounts. Use your knowledge of {property_data.get('address', 'this area')}'s
+        actual market conditions, not generic assumptions.
+        """
+
+        result = self._make_request(prompt)
+        if result.get("success"):
+            result["flip_metrics"] = flip_metrics
+        return result
+
     def _make_request(self, prompt: str) -> Dict:
         """Make request to Claude API"""
         try:
             message = self.client.messages.create(
-                model="claude-3-5-sonnet-20241022",
-                max_tokens=4000,
-                temperature=0.3,
+                model="claude-sonnet-4-20250514",
+                max_tokens=6000,
+                temperature=0.2,
                 messages=[
                     {
                         "role": "user",
