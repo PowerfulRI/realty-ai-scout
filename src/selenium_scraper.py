@@ -23,6 +23,43 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+    # Redfin city IDs for CT cities (used for recently-sold comp searches)
+    # Format: city_name_lower -> redfin_city_id
+REDFIN_CT_CITIES = {
+    'willimantic': 26793, 'windham': 26793,
+    'east hartford': 6043, 'hartford': 8370,
+    'newington': 12949, 'new britain': 12714,
+    'west hartford': 25830, 'manchester': 11271,
+    'bristol': 2236, 'middletown': 12060,
+    'meriden': 11916, 'wallingford': 25246,
+    'waterbury': 25574, 'new haven': 12747,
+    'bridgeport': 2147, 'stamford': 20188,
+    'norwalk': 13318, 'danbury': 4760,
+    'torrington': 22968, 'new london': 12799,
+    'norwich': 13371, 'groton': 7971,
+    'enfield': 6291, 'vernon': 24318,
+    'glastonbury': 7339, 'south windsor': 19672,
+    'windsor': 27249, 'bloomfield': 1625,
+    'wethersfield': 26029, 'rocky hill': 17200,
+    'cromwell': 4606, 'berlin': 1373,
+    'plainville': 15455, 'southington': 19614,
+    'cheshire': 3710, 'hamden': 8172,
+    'east haven': 6016, 'west haven': 25857,
+    'milford': 12111, 'stratford': 20771,
+    'shelton': 18724, 'ansonia': 450,
+    'derby': 5024, 'seymour': 18558,
+    'naugatuck': 12554, 'wolcott': 27417,
+    'coventry': 4394, 'mansfield': 11380,
+    'columbia': 4102, 'lebanon': 10607,
+    'colchester': 4049, 'hebron': 8641,
+    'bolton': 1722, 'tolland': 22881,
+    'ellington': 6189, 'stafford': 20106,
+    'somers': 19398, 'east windsor': 6154,
+    'plainfield': 15428, 'killingly': 10112,
+    'putnam': 16290, 'thompson': 22637,
+    'brooklyn': 2306, 'canterbury': 3152,
+}
+
     # Keywords that indicate distressed/non-arm's-length sales
 DISTRESSED_KEYWORDS = [
     'foreclosure', 'foreclosed', 'pre-foreclosure', 'pre foreclosure',
@@ -708,6 +745,302 @@ class PropertyScraper:
             logger.error(f"Error finding comparables near {address}: {e}")
             return []
 
+    def find_comparables_redfin(self, address, subject_data=None, max_comps=8):
+        """Find comparable sold properties on Redfin (fallback when Zillow blocks)"""
+        if not self.driver:
+            return []
+
+        try:
+            _, city = self._extract_zip_and_city(address)
+            if not city:
+                city = address.split()[-2] if len(address.split()) >= 2 else 'connecticut'
+
+            # Look up Redfin's numeric city ID
+            city_lower = city.lower().strip()
+            city_id = REDFIN_CT_CITIES.get(city_lower)
+
+            if city_id:
+                city_name = city.title()
+                sold_url = f"https://www.redfin.com/city/{city_id}/CT/{city_name}/recently-sold"
+                logger.info(f"Redfin city ID {city_id} for '{city_lower}'")
+            else:
+                # Fallback: try text-based URL
+                city_slug = city.title().replace(' ', '-')
+                sold_url = f"https://www.redfin.com/city/{city_slug}/CT/recently-sold"
+                logger.info(f"No Redfin city ID for '{city_lower}', trying slug URL")
+
+            raw_comps = []
+            filtered_out = []
+
+            for url in [sold_url]:
+                try:
+                    logger.info(f"Redfin comp search: {url}")
+                    self.driver.get(url)
+                    time.sleep(5)
+
+                    current = self.driver.current_url
+                    logger.info(f"Redfin comp page: {current}")
+
+                    # Get full page text — Redfin's listing data is in the text
+                    page_text = self.driver.find_element(By.TAG_NAME, 'body').text
+                    logger.info(f"Redfin page text: {len(page_text)} chars")
+
+                    # Parse sold listings from page text
+                    # Redfin format: "SOLD <DATE>\n...\n$PRICE\nX beds\nY baths\nZ sq ft\nAddress"
+                    comps = self._parse_redfin_sold_listings(page_text, subject_data)
+
+                    for comp in comps:
+                        is_distressed, keyword = self._is_distressed_sale(comp.get('_raw_text', ''))
+                        if is_distressed:
+                            filtered_out.append({'reason': f'distressed: {keyword}', 'address': comp.get('address')})
+                            continue
+
+                        is_valid, reason = self._is_valid_comp(comp, subject_data)
+                        if not is_valid:
+                            filtered_out.append({'address': comp.get('address'), 'reason': reason})
+                            continue
+
+                        comp.pop('_raw_text', None)
+                        raw_comps.append(comp)
+                        logger.info(f"Redfin comp: {comp['address']} - ${comp.get('sale_price', 'N/A')} | "
+                                    f"{comp.get('beds','?')}bd/{comp.get('baths','?')}ba/{comp.get('sqft','?')}sqft")
+
+                    if raw_comps:
+                        break
+
+                except Exception as e:
+                    logger.warning(f"Redfin comp URL error: {e}")
+                    continue
+
+            logger.info(f"Redfin comps: {len(raw_comps)} valid, {len(filtered_out)} filtered")
+            return raw_comps[:max_comps]
+
+        except Exception as e:
+            logger.error(f"Redfin comp search failed: {e}")
+            return []
+
+    @staticmethod
+    def _parse_redfin_sold_listings(page_text, subject_data=None):
+        """Parse Redfin's recently-sold page text into comp listings.
+
+        Redfin format per listing:
+            SOLD JAN 9, 2026
+            ABOUT THIS HOME
+            Recently Sold Home in ...:
+            Description text...
+            $315,000
+             Last sold price
+            3 beds
+            2 baths
+            2,376 sq ft
+            128 Natchaug St, Willimantic, CT 06226
+        """
+        comps = []
+        # Split on "SOLD " markers
+        parts = re.split(r'(?=SOLD\s+[A-Z]{3}\s+\d)', page_text)
+
+        for part in parts:
+            if not part.startswith('SOLD'):
+                continue
+
+            try:
+                comp = {
+                    'address': 'Unknown',
+                    'sale_price': None,
+                    'sale_date': None,
+                    'sqft': None,
+                    'beds': None,
+                    'baths': None,
+                    'year_built': None,
+                    'distance_miles': None,
+                    'sale_type': 'standard',
+                    'source': 'redfin',
+                    'scraped_at': time.time(),
+                    '_raw_text': part[:500],
+                }
+
+                lines = [l.strip() for l in part.split('\n') if l.strip()]
+
+                # Sale date from first line: "SOLD JAN 9, 2026"
+                date_m = re.match(r'SOLD\s+(.+)', lines[0])
+                if date_m:
+                    comp['sale_date'] = date_m.group(1)
+
+                # Price: line containing "$XXX,XXX"
+                for line in lines:
+                    price_m = re.match(r'^\$\s*([\d,]+)', line)
+                    if price_m:
+                        val = int(price_m.group(1).replace(',', ''))
+                        if val > 20000:
+                            comp['sale_price'] = str(val)
+                        break
+
+                # Beds: "3 beds" or "3 bed"
+                for line in lines:
+                    bed_m = re.match(r'^(\d+)\s+beds?$', line)
+                    if bed_m:
+                        comp['beds'] = int(bed_m.group(1))
+                        break
+
+                # Baths: "2 baths" or "1 bath" or "1.5 baths"
+                for line in lines:
+                    bath_m = re.match(r'^(\d+(?:\.\d+)?)\s+baths?$', line)
+                    if bath_m:
+                        comp['baths'] = float(bath_m.group(1))
+                        break
+
+                # Sqft: "2,376 sq ft"
+                for line in lines:
+                    sqft_m = re.match(r'^([\d,]+)\s+sq\s*ft$', line)
+                    if sqft_m:
+                        val = int(sqft_m.group(1).replace(',', ''))
+                        if 200 < val < 50000:
+                            comp['sqft'] = val
+                        break
+
+                # Address: line with number + street + city/state/zip
+                for line in lines:
+                    if re.match(r'^\d+\s+\w+.*,\s*\w+,\s*[A-Z]{2}\s*\d{5}', line):
+                        comp['address'] = line
+                        break
+
+                # Only include if we got at least a price and address
+                if comp['sale_price'] and comp['address'] != 'Unknown':
+                    comps.append(comp)
+
+            except Exception:
+                continue
+
+        return comps
+
+    @staticmethod
+    def _parse_comp_from_text_block(text, source='unknown'):
+        """Parse a block of text (card or listing) into a comp data dict"""
+        text_lower = text.lower()
+        lines = [l.strip() for l in text.split('\n') if l.strip()]
+
+        comp = {
+            'address': lines[0] if lines else 'Unknown',
+            'sale_price': None,
+            'sale_date': None,
+            'sqft': None,
+            'beds': None,
+            'baths': None,
+            'year_built': None,
+            'lot_size': None,
+            'distance_miles': None,
+            'sale_type': 'standard',
+            'source': source,
+            'scraped_at': time.time()
+        }
+
+        # Price
+        price_m = re.search(r'\$\s*([\d,]+)', text)
+        if price_m:
+            val = int(price_m.group(1).replace(',', ''))
+            if val > 20000:
+                comp['sale_price'] = str(val)
+
+        # Beds
+        bed_m = re.search(r'(\d+)\s*(?:bd|beds?)\b', text_lower)
+        if bed_m:
+            comp['beds'] = int(bed_m.group(1))
+
+        # Baths
+        bath_m = re.search(r'(\d+(?:\.\d+)?)\s*(?:ba|baths?)\b', text_lower)
+        if bath_m:
+            comp['baths'] = float(bath_m.group(1))
+
+        # Sqft
+        sqft_m = re.search(r'([\d,]+)\s*(?:sq\.?\s*ft|sqft)', text_lower)
+        if sqft_m:
+            val = int(sqft_m.group(1).replace(',', ''))
+            if 200 < val < 50000:
+                comp['sqft'] = val
+
+        # Sale date
+        date_m = re.search(r'(?:sold|closed)\s*(?:on\s*)?(\w+\s+\d{1,2},?\s*\d{4}|\d{1,2}/\d{1,2}/\d{2,4})', text_lower)
+        if date_m:
+            comp['sale_date'] = date_m.group(1)
+
+        # Year built
+        yr_m = re.search(r'(?:built|year\s*built)\s*:?\s*(\d{4})', text_lower)
+        if yr_m:
+            yr = int(yr_m.group(1))
+            if 1800 < yr < 2027:
+                comp['year_built'] = yr
+
+        # Address: try to find a proper address line
+        for line in lines:
+            if re.match(r'^\d+\s+\w+', line) and any(w in line.lower() for w in ['st', 'rd', 'ave', 'dr', 'ln', 'ct', 'way', 'blvd', 'pl']):
+                comp['address'] = line
+                break
+
+        return comp
+
+    def _parse_comps_from_text(self, page_text, subject_data=None):
+        """Parse full page text for sold property listings when card selectors fail"""
+        comps = []
+        # Look for patterns like "$185,000 | 3 bd | 1 ba | 1,200 sqft | 123 Main St"
+        # Or address blocks separated by price/details
+        lines = page_text.split('\n')
+        current_block = []
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                if current_block:
+                    block_text = '\n'.join(current_block)
+                    # Only consider blocks that have both a price and an address-like line
+                    if '$' in block_text and re.search(r'\d+\s+\w+\s+(st|rd|ave|dr|ln|ct|way)', block_text.lower()):
+                        comp = self._parse_comp_from_text_block(block_text, 'redfin_text')
+                        if comp.get('sale_price'):
+                            is_distressed, _ = self._is_distressed_sale(block_text)
+                            if not is_distressed:
+                                is_valid, _ = self._is_valid_comp(comp, subject_data)
+                                if is_valid:
+                                    comps.append(comp)
+                    current_block = []
+            else:
+                current_block.append(line)
+
+        logger.info(f"Parsed {len(comps)} comps from page text")
+        return comps[:8]
+
+    @staticmethod
+    def _estimate_distance(subject_address, comp_address):
+        """Rough distance estimate based on address parsing (same street = close, same city = moderate)"""
+        subj = subject_address.lower().replace(',', ' ').split()
+        comp_addr = comp_address.lower().replace(',', ' ').split()
+
+        # Same street check
+        subj_street_words = [w for w in subj[1:] if w not in ['ct', 'ma', 'ny', 'nj']]
+        comp_street_words = [w for w in comp_addr[1:] if w not in ['ct', 'ma', 'ny', 'nj']]
+
+        street_overlap = set(subj_street_words) & set(comp_street_words)
+        if len(street_overlap) >= 2:
+            return 0.1  # Same street
+        elif len(street_overlap) >= 1:
+            return 0.5  # Nearby street or same area
+
+        # Same city check
+        subj_city = None
+        comp_city = None
+        state_abbrevs = ['ct', 'ma', 'ri', 'ny', 'nj', 'pa']
+        for i, w in enumerate(subj):
+            if w in state_abbrevs and i > 0:
+                subj_city = subj[i - 1]
+        for i, w in enumerate(comp_addr):
+            if w in state_abbrevs and i > 0:
+                comp_city = comp_addr[i - 1]
+
+        if subj_city and comp_city and subj_city == comp_city:
+            return 1.5  # Same city
+        elif subj_city and comp_city:
+            return 5.0  # Different city
+
+        return 2.0  # Unknown, assume moderate
+
     def _merge_scraped_data(self, primary, secondary):
         """Merge two scraped data dicts — primary wins, secondary fills gaps"""
         if not secondary:
@@ -738,8 +1071,16 @@ class PropertyScraper:
             redfin_data = self.scrape_redfin(address)
             property_data = self._merge_scraped_data(property_data, redfin_data)
 
-        # Pass subject property data so comps can be filtered by similarity
+        # Find comps — try Zillow first, fall back to Redfin
         comparables = self.find_comparables(address, subject_data=property_data)
+        if not comparables:
+            logger.info("No Zillow comps — trying Redfin comp search")
+            comparables = self.find_comparables_redfin(address, subject_data=property_data)
+
+        # Add distance estimates to all comps
+        for comp in comparables:
+            if not comp.get('distance_miles'):
+                comp['distance_miles'] = self._estimate_distance(address, comp.get('address', ''))
 
         return {
             'property': property_data,

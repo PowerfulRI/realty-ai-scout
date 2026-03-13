@@ -3,124 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Realty AI Scout - Property Analysis</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Realty AI Scout - Investor Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="container-fluid">
-        <!-- Header -->
-        <nav class="navbar navbar-dark bg-primary mb-4">
-            <div class="container-fluid">
-                <span class="navbar-brand mb-0 h1">🏠 Realty AI Scout</span>
-                <span class="navbar-text">AI-Powered Property Analysis</span>
-            </div>
-        </nav>
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid px-4">
+            <span class="navbar-brand mb-0 h1">Realty AI Scout</span>
+            <span class="navbar-text text-light opacity-75">Investor Intelligence Platform</span>
+        </div>
+    </nav>
 
-        <div class="row">
-            <!-- Input Panel -->
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Property Analysis</h5>
-                    </div>
-                    <div class="card-body">
-                        <form id="propertyForm">
-                            <div class="mb-3">
-                                <label for="address" class="form-label">Property Address</label>
-                                <input type="text" class="form-control" id="address" name="address" 
-                                       placeholder="123 Main St, City, State" required>
-                                <div class="form-text">Enter full address including city and state</div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="analysisType" class="form-label">Analysis Type</label>
-                                <select class="form-select" id="analysisType" name="analysisType">
-                                    <option value="full">Full Analysis</option>
-                                    <option value="flip">Flip / Investment Analysis</option>
-                                    <option value="valuation">Valuation Only</option>
-                                    <option value="comparables">Comparables Only</option>
-                                    <option value="market">Market Research</option>
-                                </select>
-                            </div>
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <!-- Sidebar -->
+            <div class="col-lg-3 col-md-4 sidebar">
+                <div class="p-4">
+                    <form id="propertyForm">
+                        <div class="mb-3">
+                            <label for="address" class="form-label text-light fw-semibold">Property Address</label>
+                            <input type="text" class="form-control" id="address" name="address"
+                                   placeholder="123 Main St, City, State" required>
+                        </div>
 
-                            <!-- Manual Property Details (optional override) -->
-                            <div class="mb-3">
-                                <a class="text-decoration-none small" data-bs-toggle="collapse" href="#manualDetails" role="button">
-                                    + Add property details manually
-                                </a>
-                                <div class="collapse mt-2" id="manualDetails">
-                                    <div class="card card-body bg-light p-2">
-                                        <small class="text-muted mb-2">Override scraped data or enter details when scraping fails</small>
-                                        <div class="row g-2">
-                                            <div class="col-6">
-                                                <input type="number" class="form-control form-control-sm" id="price" placeholder="Price ($)">
-                                            </div>
-                                            <div class="col-6">
-                                                <input type="number" class="form-control form-control-sm" id="sqft" placeholder="Sqft (above grade)">
-                                            </div>
-                                            <div class="col-4">
-                                                <input type="number" class="form-control form-control-sm" id="beds" placeholder="Beds">
-                                            </div>
-                                            <div class="col-4">
-                                                <input type="number" class="form-control form-control-sm" id="baths" placeholder="Baths" step="0.5">
-                                            </div>
-                                            <div class="col-4">
-                                                <input type="number" class="form-control form-control-sm" id="yearBuilt" placeholder="Year Built">
-                                            </div>
-                                            <div class="col-6">
-                                                <input type="number" class="form-control form-control-sm" id="basementSqft" placeholder="Finished Bsmt Sqft">
-                                            </div>
-                                            <div class="col-6">
-                                                <select class="form-select form-select-sm" id="basement">
-                                                    <option value="">Basement?</option>
-                                                    <option value="finished full">Finished Full</option>
-                                                    <option value="finished partial">Finished Partial</option>
-                                                    <option value="unfinished">Unfinished</option>
-                                                    <option value="walkout finished">Walkout Finished</option>
-                                                    <option value="none">None</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-6">
-                                                <input type="text" class="form-control form-control-sm" id="lotSize" placeholder="Lot Size">
-                                            </div>
-                                            <div class="col-6">
-                                                <select class="form-select form-select-sm" id="condition">
-                                                    <option value="">Condition?</option>
-                                                    <option value="excellent">Excellent</option>
-                                                    <option value="good">Good</option>
-                                                    <option value="fair">Fair</option>
-                                                    <option value="poor">Poor</option>
-                                                    <option value="needs full rehab">Needs Full Rehab</option>
-                                                </select>
-                                            </div>
+                        <div class="mb-3">
+                            <label for="analysisType" class="form-label text-light fw-semibold">Analysis Type</label>
+                            <select class="form-select" id="analysisType" name="analysisType">
+                                <option value="full">Full Analysis</option>
+                                <option value="flip">Flip / Investment Analysis</option>
+                                <option value="valuation">Valuation Only</option>
+                                <option value="comparables">Comparables Only</option>
+                            </select>
+                        </div>
+
+                        <!-- Manual Property Details -->
+                        <div class="mb-3">
+                            <a class="text-decoration-none small text-emerald" data-bs-toggle="collapse" href="#manualDetails" role="button">
+                                + Override / Manual Input
+                            </a>
+                            <div class="collapse mt-2" id="manualDetails">
+                                <div class="manual-input-panel p-3">
+                                    <small class="text-muted d-block mb-2">Fill in when scraping misses data</small>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <input type="number" class="form-control form-control-sm" id="price" placeholder="Price ($)">
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="number" class="form-control form-control-sm" id="sqft" placeholder="Sqft (above grade)">
+                                        </div>
+                                        <div class="col-4">
+                                            <input type="number" class="form-control form-control-sm" id="beds" placeholder="Beds">
+                                        </div>
+                                        <div class="col-4">
+                                            <input type="number" class="form-control form-control-sm" id="baths" placeholder="Baths" step="0.5">
+                                        </div>
+                                        <div class="col-4">
+                                            <input type="number" class="form-control form-control-sm" id="yearBuilt" placeholder="Yr Built">
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="number" class="form-control form-control-sm" id="basementSqft" placeholder="Fin. Bsmt Sqft">
+                                        </div>
+                                        <div class="col-6">
+                                            <select class="form-select form-select-sm" id="basement">
+                                                <option value="">Basement?</option>
+                                                <option value="finished full">Finished Full</option>
+                                                <option value="finished partial">Finished Partial</option>
+                                                <option value="unfinished">Unfinished</option>
+                                                <option value="walkout finished">Walkout Finished</option>
+                                                <option value="none">None</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="text" class="form-control form-control-sm" id="lotSize" placeholder="Lot Size">
+                                        </div>
+                                        <div class="col-6">
+                                            <select class="form-select form-select-sm" id="condition">
+                                                <option value="">Condition?</option>
+                                                <option value="excellent">Excellent</option>
+                                                <option value="good">Good</option>
+                                                <option value="fair">Fair</option>
+                                                <option value="poor">Poor</option>
+                                                <option value="needs full rehab">Needs Full Rehab</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <select class="form-select form-select-sm" id="propertyType">
+                                                <option value="">Style?</option>
+                                                <option value="colonial">Colonial</option>
+                                                <option value="ranch">Ranch</option>
+                                                <option value="cape cod">Cape Cod</option>
+                                                <option value="split level">Split Level</option>
+                                                <option value="raised ranch">Raised Ranch</option>
+                                                <option value="multi-family">Multi-Family</option>
+                                                <option value="condo">Condo</option>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <button type="submit" class="btn btn-primary w-100" id="analyzeBtn">
-                                <span class="spinner-border spinner-border-sm d-none" id="loadingSpinner"></span>
-                                Analyze Property
-                            </button>
-                        </form>
+                        <button type="submit" class="btn btn-analyze w-100 mb-2" id="analyzeBtn">
+                            Analyze Deal
+                        </button>
+                    </form>
 
-                        <!-- Progress Indicator -->
-                        <div class="mt-3 d-none" id="progressContainer">
-                            <div class="progress mb-2">
-                                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
-                            </div>
-                            <small class="text-muted" id="progressText">Starting analysis...</small>
+                    <!-- Progress -->
+                    <div class="mt-3 d-none" id="progressContainer">
+                        <div class="progress mb-2">
+                            <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                        </div>
+                        <small class="text-muted" id="progressText">Starting analysis...</small>
+                    </div>
+
+                    <!-- Quick Reference -->
+                    <div class="mt-4 pt-3 border-top border-secondary">
+                        <h6 class="text-light small text-uppercase fw-bold mb-3">Quick Reference</h6>
+                        <div class="ref-item mb-2">
+                            <small class="text-emerald fw-bold">70% Rule</small>
+                            <small class="text-muted d-block">Max = ARV x 0.70 - Rehab</small>
+                        </div>
+                        <div class="ref-item mb-2">
+                            <small class="text-amber fw-bold">80% Rule</small>
+                            <small class="text-muted d-block">Max = ARV x 0.80 - Rehab</small>
+                        </div>
+                        <div class="ref-item mb-2">
+                            <small class="text-light fw-bold">Holding Costs</small>
+                            <small class="text-muted d-block">~$1,500-$1,750/mo (6-8 mo)</small>
+                        </div>
+                        <div class="ref-item mb-2">
+                            <small class="text-light fw-bold">Selling Costs</small>
+                            <small class="text-muted d-block">5% of ARV</small>
                         </div>
                     </div>
-                </div>
 
-                <!-- Recent Searches -->
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h6 class="card-title mb-0">Recent Searches</h6>
-                    </div>
-                    <div class="card-body">
+                    <!-- Recent Searches -->
+                    <div class="mt-4 pt-3 border-top border-secondary">
+                        <h6 class="text-light small text-uppercase fw-bold mb-2">Recent</h6>
                         <div id="recentSearches">
                             <small class="text-muted">No recent searches</small>
                         </div>
@@ -128,150 +150,191 @@
                 </div>
             </div>
 
-            <!-- Results Panel -->
-            <div class="col-md-8">
-                <!-- Welcome Message -->
-                <div id="welcomeMessage" class="text-center py-5">
-                    <h2 class="text-muted">Welcome to Realty AI Scout</h2>
-                    <p class="lead">Enter a property address to get started with AI-powered analysis</p>
-                    <div class="row mt-4">
-                        <div class="col-md-4">
-                            <div class="card border-0">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-search fa-2x text-primary mb-2"></i>
-                                    <h6>Multi-Source Data</h6>
-                                    <small class="text-muted">Scrapes data from multiple real estate sites</small>
+            <!-- Main Content -->
+            <div class="col-lg-9 col-md-8 main-content">
+                <div class="p-4">
+                    <!-- Welcome -->
+                    <div id="welcomeMessage" class="text-center py-5">
+                        <div class="mb-4">
+                            <div class="welcome-icon">$</div>
+                        </div>
+                        <h2 class="fw-bold mb-2">Investor Deal Analyzer</h2>
+                        <p class="text-secondary lead mb-5">Enter a property address to run a full investment analysis</p>
+                        <div class="row g-4 justify-content-center">
+                            <div class="col-md-3">
+                                <div class="card feature-card">
+                                    <div class="card-body text-center py-4">
+                                        <div class="feature-icon mb-3">CMA</div>
+                                        <h6 class="fw-bold">Market Valuation</h6>
+                                        <small class="text-secondary">Comp-based FMV with adjustments</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card feature-card">
+                                    <div class="card-body text-center py-4">
+                                        <div class="feature-icon mb-3">ARV</div>
+                                        <h6 class="fw-bold">Flip Analysis</h6>
+                                        <small class="text-secondary">70/80% rule, rehab costs, P&L</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card feature-card">
+                                    <div class="card-body text-center py-4">
+                                        <div class="feature-icon mb-3">BRRRR</div>
+                                        <h6 class="fw-bold">Cash Flow</h6>
+                                        <small class="text-secondary">Rental est, cap rate, refi analysis</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card feature-card">
+                                    <div class="card-body text-center py-4">
+                                        <div class="feature-icon mb-3">AI</div>
+                                        <h6 class="fw-bold">Risk Assessment</h6>
+                                        <small class="text-secondary">Deal score, risk factors, exit plans</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="card border-0">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
-                                    <h6>AI Analysis</h6>
-                                    <small class="text-muted">Claude AI provides intelligent insights</small>
+                    </div>
+
+                    <!-- Results Container -->
+                    <div id="resultsContainer" class="d-none">
+
+                        <!-- Deal Verdict Banner -->
+                        <div id="dealVerdict" class="deal-verdict mb-4 d-none">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h4 class="mb-1 fw-bold" id="verdictAddress"></h4>
+                                    <span class="text-muted" id="verdictSource"></span>
+                                </div>
+                                <div class="text-end">
+                                    <div id="verdictBadge" class="verdict-badge"></div>
+                                    <small class="text-muted d-block mt-1" id="analysisTimestamp"></small>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="card border-0">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-home fa-2x text-info mb-2"></i>
-                                    <h6>Comparable Properties</h6>
-                                    <small class="text-muted">Find similar properties and market trends</small>
+
+                        <!-- Key Stats Row -->
+                        <div class="row g-3 mb-4" id="keyStatsRow">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <!-- Missing Data Warning -->
+                        <div id="missingDataWarning" class="d-none"></div>
+
+                        <!-- Valuation Analysis -->
+                        <div class="card section-card mb-4">
+                            <div class="card-header section-header">
+                                <h5 class="mb-0 fw-bold">Valuation Analysis</h5>
+                            </div>
+                            <div class="card-body" id="valuationResults"></div>
+                        </div>
+
+                        <!-- Investment Metrics -->
+                        <div class="card section-card mb-4" id="investmentCard">
+                            <div class="card-header section-header">
+                                <h5 class="mb-0 fw-bold">Investment Metrics</h5>
+                            </div>
+                            <div class="card-body" id="investmentMetrics"></div>
+                        </div>
+
+                        <!-- Flip Analysis (hidden by default) -->
+                        <div class="card section-card mb-4 d-none" id="flipAnalysisCard">
+                            <div class="card-header section-header">
+                                <h5 class="mb-0 fw-bold">Flip P&L Breakdown</h5>
+                            </div>
+                            <div class="card-body" id="flipAnalysisResults"></div>
+                        </div>
+
+                        <!-- BRRRR Analysis -->
+                        <div class="card section-card mb-4 d-none" id="brrrrCard">
+                            <div class="card-header section-header">
+                                <h5 class="mb-0 fw-bold">BRRRR Analysis</h5>
+                            </div>
+                            <div class="card-body" id="brrrrResults"></div>
+                        </div>
+
+                        <!-- Comparable Properties -->
+                        <div class="card section-card mb-4">
+                            <div class="card-header section-header">
+                                <h5 class="mb-0 fw-bold">Comparable Sales</h5>
+                            </div>
+                            <div class="card-body" id="comparablesResults"></div>
+                        </div>
+
+                        <!-- Market Insights -->
+                        <div class="card section-card mb-4">
+                            <div class="card-header section-header">
+                                <h5 class="mb-0 fw-bold">Market Intelligence</h5>
+                            </div>
+                            <div class="card-body" id="marketInsights"></div>
+                        </div>
+
+                        <!-- AI Recommendations & Risk -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <div class="card section-card h-100">
+                                    <div class="card-header section-header">
+                                        <h5 class="mb-0 fw-bold">AI Recommendations</h5>
+                                    </div>
+                                    <div class="card-body" id="aiRecommendations"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card section-card h-100">
+                                    <div class="card-header section-header">
+                                        <h5 class="mb-0 fw-bold">Risk Factors</h5>
+                                    </div>
+                                    <div class="card-body" id="riskFactors"></div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Results Container -->
-                <div id="resultsContainer" class="d-none">
-                    <!-- Property Summary -->
-                    <div class="card mb-3">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">Property Summary</h5>
-                            <small class="text-muted" id="analysisTimestamp"></small>
-                        </div>
-                        <div class="card-body" id="propertySummary">
-                            <!-- Property details will be populated here -->
-                        </div>
+                        <!-- Data Quality -->
+                        <div id="dataQualityNote" class="d-none mb-4"></div>
                     </div>
 
-                    <!-- Valuation Results -->
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h5 class="mb-0">Valuation Analysis</h5>
+                    <!-- Error Container -->
+                    <div id="errorContainer" class="d-none">
+                        <div class="alert alert-danger border-0">
+                            <h5 class="fw-bold">Analysis Error</h5>
+                            <p id="errorMessage" class="mb-2"></p>
+                            <button class="btn btn-sm btn-outline-danger" onclick="location.reload()">Try Again</button>
                         </div>
-                        <div class="card-body" id="valuationResults">
-                            <!-- Valuation results will be populated here -->
-                        </div>
-                    </div>
-
-                    <!-- Comparables -->
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h5 class="mb-0">Comparable Properties</h5>
-                        </div>
-                        <div class="card-body" id="comparablesResults">
-                            <!-- Comparables will be populated here -->
-                        </div>
-                    </div>
-
-                    <!-- Market Insights -->
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h5 class="mb-0">Market Insights</h5>
-                        </div>
-                        <div class="card-body" id="marketInsights">
-                            <!-- Market insights will be populated here -->
-                        </div>
-                    </div>
-
-                    <!-- Flip Analysis -->
-                    <div class="card mb-3 d-none" id="flipAnalysisCard">
-                        <div class="card-header">
-                            <h5 class="mb-0">Flip / Investment Analysis</h5>
-                        </div>
-                        <div class="card-body" id="flipAnalysisResults">
-                        </div>
-                    </div>
-
-                    <!-- AI Recommendations -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">AI Recommendations</h5>
-                        </div>
-                        <div class="card-body" id="aiRecommendations">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Error Container -->
-                <div id="errorContainer" class="d-none">
-                    <div class="alert alert-danger">
-                        <h5>Analysis Error</h5>
-                        <p id="errorMessage"></p>
-                        <button class="btn btn-outline-danger btn-sm" onclick="location.reload()">Try Again</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Property Analysis Form Handler
+        // ============================================================
+        // Realty AI Scout - Investor Analysis JS
+        // ============================================================
+
         document.getElementById('propertyForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             const address = document.getElementById('address').value;
             const analysisType = document.getElementById('analysisType').value;
-            
-            if (!address.trim()) {
-                alert('Please enter a property address');
-                return;
-            }
-            
-            // Show loading state
+
+            if (!address.trim()) return;
+
             showLoading(true);
             hideResults();
             showProgress(0, 'Starting analysis...');
-            
+
             try {
-                // Simulate progress updates
-                updateProgress(20, 'Scraping property data...');
-                await delay(1000);
-                
-                updateProgress(50, 'Researching market data...');
-                await delay(1000);
-                
-                updateProgress(80, 'Generating AI analysis...');
-                await delay(1000);
-                
-                // Gather manual input fields
+                updateProgress(15, 'Scraping property data...');
+                await delay(800);
+                updateProgress(40, 'Checking backup sources...');
+                await delay(600);
+                updateProgress(70, 'Running AI analysis...');
+
                 const manualData = {
                     address: address,
                     analysis_type: analysisType,
@@ -284,23 +347,20 @@
                     basement: document.getElementById('basement').value || undefined,
                     lot_size: document.getElementById('lotSize').value || undefined,
                     condition: document.getElementById('condition').value || undefined,
+                    property_type: document.getElementById('propertyType').value || undefined,
                 };
-                // Remove undefined keys
                 Object.keys(manualData).forEach(k => manualData[k] === undefined && delete manualData[k]);
 
                 const endpoint = analysisType === 'flip' ? '/flip-analysis' : '/analyze';
                 const response = await fetch(endpoint, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(manualData)
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (response.ok) {
-                    // Check if we got meaningful property data
                     const prop = data.property_data || {};
                     const isReal = (v) => v && v !== 'None' && v !== null && v !== 'null';
                     const hasPrice = isReal(prop.price);
@@ -311,28 +371,18 @@
                     );
                     const missingCount = [!hasPrice, !hasBeds, !hasSqft].filter(Boolean).length;
 
-                    // Show warning if key fields are missing and no manual override
                     if (missingCount >= 2 && !hasManualData) {
-                        updateProgress(100, 'Partial data — add details manually for better accuracy');
+                        updateProgress(100, 'Partial data — expand manual input for accuracy');
                         await delay(500);
-                        // Auto-expand manual details panel
                         const manualPanel = document.getElementById('manualDetails');
                         if (!manualPanel.classList.contains('show')) {
                             new bootstrap.Collapse(manualPanel, {show: true});
                         }
-                        const missing = [];
-                        if (!hasPrice) missing.push('price');
-                        if (!hasBeds) missing.push('beds/baths');
-                        if (!hasSqft) missing.push('square footage');
-                        showError(
-                            'Scraping got limited data (missing: ' + missing.join(', ') + '). ' +
-                            'The manual input panel has been opened — fill in the property details you know and re-run for accurate results.'
-                        );
                     } else {
                         updateProgress(100, 'Analysis complete!');
-                        await delay(500);
+                        await delay(400);
                     }
-                    // Always show results
+
                     if (analysisType === 'flip') {
                         displayFlipResults(data);
                     } else {
@@ -342,7 +392,7 @@
                 } else {
                     showError(data.error || 'Analysis failed');
                 }
-                
+
             } catch (error) {
                 showError('Network error: ' + error.message);
             } finally {
@@ -350,55 +400,60 @@
                 hideProgress();
             }
         });
-        
-        function showLoading(show) {
-            const btn = document.getElementById('analyzeBtn');
-            const spinner = document.getElementById('loadingSpinner');
-            
-            if (show) {
-                btn.disabled = true;
-                spinner.classList.remove('d-none');
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Analyzing...';
-            } else {
-                btn.disabled = false;
-                spinner.classList.add('d-none');
-                btn.innerHTML = 'Analyze Property';
-            }
-        }
-        
-        function showProgress(percent, text) {
-            const container = document.getElementById('progressContainer');
-            const bar = document.getElementById('progressBar');
-            const textEl = document.getElementById('progressText');
-            
-            container.classList.remove('d-none');
-            bar.style.width = percent + '%';
-            textEl.textContent = text;
-        }
-        
-        function updateProgress(percent, text) {
-            showProgress(percent, text);
-        }
-        
-        function hideProgress() {
-            document.getElementById('progressContainer').classList.add('d-none');
-        }
-        
+
+        // ============================================================
+        // Display Full Analysis Results
+        // ============================================================
         function displayResults(data) {
             document.getElementById('welcomeMessage').classList.add('d-none');
             document.getElementById('resultsContainer').classList.remove('d-none');
             document.getElementById('errorContainer').classList.add('d-none');
-            document.getElementById('analysisTimestamp').textContent = new Date().toLocaleString();
 
             const property = data.property_data || {};
             const comparables = data.comparables || [];
             const analysis = data.analysis || {};
             const valuation = analysis.valuation || {};
+            const ma = analysis.market_analysis || {};
+            const inv = analysis.investment_analysis || {};
 
-            // Data source indicator
-            const srcBadge = property.data_source === 'manual'
-                ? '<span class="badge bg-info">Manual Input</span>'
-                : '<span class="badge bg-secondary">Scraped</span>';
+            // Deal Verdict Banner
+            const verdict = document.getElementById('dealVerdict');
+            verdict.classList.remove('d-none');
+            document.getElementById('verdictAddress').textContent = data.address;
+            document.getElementById('verdictSource').innerHTML =
+                (property.data_source === 'manual'
+                    ? '<span class="badge bg-info">Manual Input</span>'
+                    : '<span class="badge badge-source">Scraped</span>') +
+                (property.property_type ? ' <span class="badge bg-secondary">' + property.property_type + '</span>' : '');
+            document.getElementById('analysisTimestamp').textContent = new Date().toLocaleString();
+
+            // Verdict badge
+            const priceVsValue = (valuation.price_vs_value || '').toLowerCase();
+            let verdictClass = 'verdict-neutral';
+            let verdictText = 'ANALYSIS COMPLETE';
+            if (priceVsValue.includes('below') || priceVsValue.includes('under')) {
+                verdictClass = 'verdict-buy'; verdictText = 'BELOW MARKET';
+            } else if (priceVsValue.includes('above') || priceVsValue.includes('over')) {
+                verdictClass = 'verdict-consider'; verdictText = 'ABOVE MARKET';
+            } else if (priceVsValue.includes('at') || priceVsValue.includes('fair')) {
+                verdictClass = 'verdict-neutral'; verdictText = 'AT MARKET';
+            }
+            document.getElementById('verdictBadge').className = 'verdict-badge ' + verdictClass;
+            document.getElementById('verdictBadge').textContent = verdictText;
+
+            // Key Stats
+            const price = property.price ? '$' + formatNumber(property.price) : 'N/A';
+            const rawFmv = valuation.estimated_fair_market_value || valuation.estimated_value || '';
+            const fmv = rawFmv ? '$' + formatNumber(rawFmv) : 'N/A';
+
+            document.getElementById('keyStatsRow').innerHTML = `
+                <div class="col-6 col-lg-2"><div class="stat-card"><div class="stat-value">${price}</div><div class="stat-label">Ask Price</div></div></div>
+                <div class="col-6 col-lg-2"><div class="stat-card"><div class="stat-value">${fmv}</div><div class="stat-label">Est. FMV</div></div></div>
+                <div class="col-6 col-lg-2"><div class="stat-card"><div class="stat-value">${property.beds || 'N/A'}</div><div class="stat-label">Beds</div></div></div>
+                <div class="col-6 col-lg-2"><div class="stat-card"><div class="stat-value">${property.baths || 'N/A'}</div><div class="stat-label">Baths</div></div></div>
+                <div class="col-6 col-lg-2"><div class="stat-card"><div class="stat-value">${property.sqft ? formatNumber(property.sqft) : 'N/A'}</div><div class="stat-label">Sqft</div></div></div>
+                <div class="col-6 col-lg-2"><div class="stat-card"><div class="stat-value">${property.year_built || 'N/A'}</div><div class="stat-label">Year Built</div></div></div>
+            `;
 
             // Missing data warning
             const missingFields = [];
@@ -406,230 +461,193 @@
             if (!property.baths) missingFields.push('baths');
             if (!property.sqft) missingFields.push('sqft');
             if (!property.year_built) missingFields.push('year built');
-            const missingWarning = missingFields.length > 0
-                ? `<div class="alert alert-warning py-2 mt-2"><small>Missing: ${missingFields.join(', ')} — add via manual input for better accuracy</small></div>`
-                : '';
-
-            // Property summary with all fields
-            let detailsRow2 = '';
-            if (property.year_built || property.basement || property.condition || property.total_living_sqft) {
-                detailsRow2 = '<div class="row mt-2">';
-                if (property.year_built) detailsRow2 += `<div class="col-md-3"><div class="property-feature"><h4>${property.year_built}</h4><small>Year Built</small></div></div>`;
-                if (property.basement) detailsRow2 += `<div class="col-md-3"><div class="property-feature"><h4>${property.basement}</h4><small>Basement</small></div></div>`;
-                if (property.sqft_finished_basement) detailsRow2 += `<div class="col-md-3"><div class="property-feature"><h4>${formatNumber(property.sqft_finished_basement)}</h4><small>Fin. Bsmt Sqft</small></div></div>`;
-                if (property.total_living_sqft) detailsRow2 += `<div class="col-md-3"><div class="property-feature"><h4>${formatNumber(property.total_living_sqft)}</h4><small>Total Living Sqft</small></div></div>`;
-                if (property.condition) detailsRow2 += `<div class="col-md-3"><div class="property-feature"><h4>${property.condition}</h4><small>Condition</small></div></div>`;
-                if (property.lot_size) detailsRow2 += `<div class="col-md-3"><div class="property-feature"><h4>${property.lot_size}</h4><small>Lot Size</small></div></div>`;
-                detailsRow2 += '</div>';
+            const warningEl = document.getElementById('missingDataWarning');
+            if (missingFields.length > 0) {
+                warningEl.classList.remove('d-none');
+                warningEl.innerHTML = `<div class="alert alert-warning border-0 py-2"><strong>Missing:</strong> ${missingFields.join(', ')} — add via manual input for better accuracy</div>`;
+            } else {
+                warningEl.classList.add('d-none');
             }
 
-            document.getElementById('propertySummary').innerHTML = `
-                <div class="row">
-                    <div class="col-md-8">
-                        <h6>${data.address} ${srcBadge}</h6>
-                        <p class="text-muted mb-2">${analysis.executive_summary || 'Property analysis completed'}</p>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <span class="badge bg-success">${data.status}</span>
-                    </div>
-                </div>
-                ${missingWarning}
-                <div class="row">
-                    <div class="col-md-3"><div class="property-feature"><h4>${property.price ? '$' + formatNumber(property.price) : 'N/A'}</h4><small>Listed Price</small></div></div>
-                    <div class="col-md-3"><div class="property-feature"><h4>${property.beds || 'N/A'}</h4><small>Bedrooms</small></div></div>
-                    <div class="col-md-3"><div class="property-feature"><h4>${property.baths || 'N/A'}</h4><small>Bathrooms</small></div></div>
-                    <div class="col-md-3"><div class="property-feature"><h4>${property.sqft ? formatNumber(property.sqft) : 'N/A'}</h4><small>Sqft (Above Grade)</small></div></div>
-                </div>
-                ${detailsRow2}
-            `;
-
-            // Valuation
-            const rawFmv = valuation.estimated_fair_market_value || valuation.estimated_value || '';
-            const fmvFormatted = rawFmv ? formatNumber(rawFmv) : null;
-            const fmvDisplay = (fmvFormatted && fmvFormatted !== 'N/A') ? '$' + fmvFormatted : (rawFmv || 'Needs more data');
+            // Valuation Analysis
             const rangeText = (valuation.value_range_low && valuation.value_range_high)
                 ? '$' + formatNumber(valuation.value_range_low) + ' - $' + formatNumber(valuation.value_range_high)
                 : (valuation.value_range || '');
-            const priceVsValue = valuation.price_vs_value || '';
+            const suggestedPrice = analysis.pricing_strategy
+                ? formatNumber(analysis.pricing_strategy.suggested_list_price) : null;
+            const suggestedDisplay = (suggestedPrice && suggestedPrice !== 'N/A') ? '$' + suggestedPrice : 'N/A';
 
             document.getElementById('valuationResults').innerHTML = `
-                <div class="row">
+                <div class="row g-4">
                     <div class="col-md-4">
-                        <h6>Est. Fair Market Value</h6>
-                        <p class="h4 text-primary">${fmvDisplay}</p>
-                        <p class="text-muted small">${rangeText}</p>
+                        <h6 class="text-secondary small text-uppercase fw-bold">Fair Market Value</h6>
+                        <p class="h3 fw-bold text-emerald mb-1">${fmv}</p>
+                        <small class="text-muted">${rangeText}</small>
                     </div>
                     <div class="col-md-4">
-                        <h6>Price vs Value</h6>
-                        <p class="h6">${priceVsValue || 'N/A'}</p>
+                        <h6 class="text-secondary small text-uppercase fw-bold">Price vs Value</h6>
+                        <p class="fw-semibold">${valuation.price_vs_value || 'N/A'}</p>
                     </div>
                     <div class="col-md-4">
-                        <h6>Confidence</h6>
-                        <p class="h6">${valuation.confidence_level || 'Medium'}</p>
+                        <h6 class="text-secondary small text-uppercase fw-bold">Confidence</h6>
+                        <p class="fw-semibold">${valuation.confidence_level || 'Medium'}</p>
                     </div>
                 </div>
-                ${valuation.methodology ? '<p class="text-muted small mt-2"><strong>Method:</strong> ' + valuation.methodology + '</p>' : ''}
+                ${valuation.methodology ? '<p class="text-muted small mt-3 mb-0"><strong>Method:</strong> ' + valuation.methodology + '</p>' : ''}
                 ${analysis.pricing_strategy ? `
                 <hr>
-                <div class="row">
-                    <div class="col-md-4"><h6>Suggested List Price</h6><p class="h5">${(() => { const v = formatNumber(analysis.pricing_strategy.suggested_list_price); return v === 'N/A' ? 'N/A' : '$' + v; })()}</p></div>
-                    <div class="col-md-4"><h6>Est. Days to Sell</h6><p>${analysis.pricing_strategy.days_to_sell_estimate || 'N/A'}</p></div>
-                    <div class="col-md-4"><p class="text-muted small">${analysis.pricing_strategy.pricing_rationale || ''}</p></div>
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <h6 class="text-secondary small text-uppercase fw-bold">Suggested List</h6>
+                        <p class="h4 fw-bold">${suggestedDisplay}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-secondary small text-uppercase fw-bold">Est. Days to Sell</h6>
+                        <p>${analysis.pricing_strategy.days_to_sell_estimate || 'N/A'}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="text-muted small mt-3">${analysis.pricing_strategy.pricing_rationale || ''}</p>
+                    </div>
                 </div>` : ''}
-                ${analysis.data_quality_notes ? '<div class="alert alert-info py-2 mt-2"><small><strong>Data Quality:</strong> ' + analysis.data_quality_notes + '</small></div>' : ''}
             `;
 
-            // Comparables with grades from Claude
-            const compAnalysis = (analysis.comparable_analysis || {}).comps_used || [];
-            if (comparables.length > 0) {
-                let compHtml = '<p class="text-muted small mb-2">Distressed sales filtered out (foreclosure, probate, short sale, etc.)</p>';
-                comparables.forEach((comp, idx) => {
-                    const aiComp = compAnalysis[idx] || {};
-                    const grade = aiComp.similarity_grade || 'B';
-                    const gradeClass = grade.startsWith('A') ? 'a' : grade.startsWith('B') ? 'b' : 'c';
-                    compHtml += `
-                        <div class="comparable-item mb-3">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h6>${comp.address} <span class="badge bg-secondary">${comp.sale_type || 'standard'}</span></h6>
-                                    <p class="mb-1"><strong>$${formatNumber(comp.sale_price)}</strong> | ${comp.beds || '?'} bed, ${comp.baths || '?'} bath | ${comp.sqft ? formatNumber(comp.sqft) + ' sqft' : 'sqft N/A'}</p>
-                                    ${aiComp.adjustments ? '<small class="text-muted">Adj: ' + aiComp.adjustments + '</small>' : ''}
-                                    ${aiComp.adjusted_value ? '<br><small><strong>Adjusted: ' + aiComp.adjusted_value + '</strong></small>' : ''}
-                                </div>
-                                <div><span class="comparable-grade grade-${gradeClass}">${grade}</span></div>
+            // Investment Metrics with BRRRR indicators
+            const investCard = document.getElementById('investmentCard');
+            if (inv && Object.keys(inv).length > 0) {
+                investCard.classList.remove('d-none');
+                document.getElementById('investmentMetrics').innerHTML = `
+                    <div class="row g-4">
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-label">Rental Estimate</div>
+                                <div class="metric-value">${inv.rental_potential || 'N/A'}</div>
                             </div>
-                        </div>`;
-                });
-                if ((analysis.comparable_analysis || {}).comp_quality_score) {
-                    compHtml += '<p class="text-muted small mt-2"><strong>Comp Quality:</strong> ' + analysis.comparable_analysis.comp_quality_score + '</p>';
-                }
-                document.getElementById('comparablesResults').innerHTML = compHtml;
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-label">Cap Rate</div>
+                                <div class="metric-value">${inv.cap_rate_estimate || 'N/A'}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-label">Appreciation</div>
+                                <div class="metric-value">${inv.appreciation_outlook || 'N/A'}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card ${getGradeClass(inv.investment_grade)}">
+                                <div class="metric-label">Investment Grade</div>
+                                <div class="metric-value fw-bold">${inv.investment_grade || 'N/A'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
             } else {
-                document.getElementById('comparablesResults').innerHTML = '<p class="text-muted">No arm\'s-length comparable sales found. Analysis uses Claude AI market knowledge.</p>';
+                investCard.classList.add('d-none');
             }
-            
-            // Market insights - enhanced
-            const ma = analysis.market_analysis || {};
+
+            // BRRRR section (show when we have rental data)
+            const brrrrCard = document.getElementById('brrrrCard');
+            if (inv.rental_potential && property.price) {
+                brrrrCard.classList.remove('d-none');
+                const purchaseNum = parseInt(String(property.price).replace(/[,$]/g, '')) || 0;
+                const refiAmount75 = rawFmv ? Math.round(parseInt(String(rawFmv).replace(/[,$]/g, '')) * 0.75) : 0;
+                const cashLeft = refiAmount75 > 0 ? purchaseNum - refiAmount75 : 0;
+
+                document.getElementById('brrrrResults').innerHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-investor mb-0">
+                            <tr><td>All-in Cost (Purchase)</td><td class="text-end fw-semibold">$${formatNumber(purchaseNum)}</td></tr>
+                            <tr><td>After Repair Value (FMV)</td><td class="text-end fw-semibold">${fmv}</td></tr>
+                            <tr><td>75% Cash-out Refi</td><td class="text-end fw-semibold">${refiAmount75 ? '$' + formatNumber(refiAmount75) : 'N/A'}</td></tr>
+                            <tr class="${cashLeft > 0 ? 'text-danger' : 'text-emerald'}"><td class="fw-bold">Cash Left in Deal</td><td class="text-end fw-bold">${cashLeft !== 0 ? '$' + formatNumber(Math.abs(cashLeft)) + (cashLeft > 0 ? ' (stuck)' : ' (pull out)') : 'N/A'}</td></tr>
+                            <tr><td>Est. Monthly Rent</td><td class="text-end fw-semibold">${inv.rental_potential || 'N/A'}</td></tr>
+                            <tr><td>Cap Rate</td><td class="text-end fw-semibold">${inv.cap_rate_estimate || 'N/A'}</td></tr>
+                        </table>
+                    </div>
+                    <p class="text-muted small mt-3 mb-0">BRRRR: Buy, Rehab, Rent, Refinance, Repeat. 75% LTV assumed for cash-out refi.</p>
+                `;
+            } else {
+                brrrrCard.classList.add('d-none');
+            }
+
+            // Comparables
+            renderComparables(comparables, analysis.comparable_analysis);
+
+            // Market Insights
             document.getElementById('marketInsights').innerHTML = `
-                <div class="row g-2 mb-3">
+                <div class="row g-3 mb-3">
                     <div class="col-md-4">
-                        <div class="market-indicator">
-                            <div class="market-indicator-icon trend-up">📈</div>
-                            <div><h6 class="mb-0">Trend</h6><p class="mb-0 small">${ma.market_trend || 'N/A'}</p></div>
+                        <div class="metric-card">
+                            <div class="metric-label">Market Trend</div>
+                            <div class="metric-value small">${ma.market_trend || 'N/A'}</div>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="market-indicator">
-                            <div class="market-indicator-icon trend-stable">📊</div>
-                            <div><h6 class="mb-0">Avg $/Sqft</h6><p class="mb-0 small">${ma.avg_price_per_sqft || ma.price_per_sqft || 'N/A'}</p></div>
+                        <div class="metric-card">
+                            <div class="metric-label">Avg $/Sqft</div>
+                            <div class="metric-value">${ma.avg_price_per_sqft || ma.price_per_sqft || 'N/A'}</div>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="market-indicator">
-                            <div class="market-indicator-icon trend-stable">🏠</div>
-                            <div><h6 class="mb-0">Median Price</h6><p class="mb-0 small">${ma.median_price_area || 'N/A'}</p></div>
+                        <div class="metric-card">
+                            <div class="metric-label">Median Price</div>
+                            <div class="metric-value">${ma.median_price_area || 'N/A'}</div>
                         </div>
                     </div>
                 </div>
-                <div class="row g-2">
-                    <div class="col-md-4"><small><strong>Avg DOM:</strong> ${ma.avg_days_on_market || 'N/A'}</small></div>
-                    <div class="col-md-4"><small><strong>Inventory:</strong> ${ma.inventory_level || 'N/A'}</small></div>
-                    <div class="col-md-4"><small><strong>Position:</strong> ${ma.market_position || 'N/A'}</small></div>
+                <div class="row g-3">
+                    <div class="col-md-3"><small class="text-muted"><strong>Avg DOM:</strong> ${ma.avg_days_on_market || 'N/A'}</small></div>
+                    <div class="col-md-3"><small class="text-muted"><strong>Inventory:</strong> ${ma.inventory_level || 'N/A'}</small></div>
+                    <div class="col-md-3"><small class="text-muted"><strong>Position:</strong> ${ma.market_position || 'N/A'}</small></div>
+                    <div class="col-md-3"><small class="text-muted"><strong>Sale-to-List:</strong> ${ma.sale_to_list_ratio || 'N/A'}</small></div>
                 </div>
-                ${analysis.investment_analysis ? `
-                <hr>
-                <div class="row g-2">
-                    <div class="col-md-3"><small><strong>Rental Est:</strong> ${analysis.investment_analysis.rental_potential || 'N/A'}</small></div>
-                    <div class="col-md-3"><small><strong>Cap Rate:</strong> ${analysis.investment_analysis.cap_rate_estimate || 'N/A'}</small></div>
-                    <div class="col-md-3"><small><strong>Appreciation:</strong> ${analysis.investment_analysis.appreciation_outlook || 'N/A'}</small></div>
-                    <div class="col-md-3"><small><strong>Grade:</strong> ${analysis.investment_analysis.investment_grade || 'N/A'}</small></div>
-                </div>` : ''}
             `;
-            
-            // Populate AI recommendations
-            let recommendationsHtml = '';
+
+            // AI Recommendations
+            let recHtml = '';
             if (analysis.recommendations && analysis.recommendations.length > 0) {
-                recommendationsHtml = '<ul class="list-unstyled">';
+                recHtml = '<ul class="list-unstyled mb-0">';
                 analysis.recommendations.forEach(rec => {
-                    recommendationsHtml += `<li class="mb-2">• ${rec}</li>`;
+                    recHtml += `<li class="rec-item mb-2">${rec}</li>`;
                 });
-                recommendationsHtml += '</ul>';
-                
-                if (analysis.risk_factors && analysis.risk_factors.length > 0) {
-                    recommendationsHtml += '<h6 class="mt-3">Risk Factors</h6><ul class="list-unstyled text-warning">';
-                    analysis.risk_factors.forEach(risk => {
-                        recommendationsHtml += `<li class="mb-2">⚠️ ${risk}</li>`;
-                    });
-                    recommendationsHtml += '</ul>';
-                }
-            } else if (analysis.raw_analysis) {
-                recommendationsHtml = `<div class="alert alert-info">
-                    <h6>Analysis Results</h6>
-                    <p>${analysis.raw_analysis.substring(0, 500)}...</p>
-                </div>`;
+                recHtml += '</ul>';
             } else {
-                recommendationsHtml = '<p class="text-muted">Generating personalized recommendations...</p>';
+                recHtml = '<p class="text-muted mb-0">No specific recommendations</p>';
             }
-            
-            document.getElementById('aiRecommendations').innerHTML = recommendationsHtml;
-        }
-        
-        function formatNumber(num) {
-            if (num === null || num === undefined || num === '' || num === 'None' || num === 'Unknown') return 'N/A';
-            // Handle strings that might have $ or , in them
-            const cleaned = String(num).replace(/[$,\s]/g, '');
-            const parsed = parseFloat(cleaned);
-            if (isNaN(parsed)) return String(num); // Return as-is if not a number (e.g. "150000-200000")
-            return Math.round(parsed).toLocaleString();
-        }
-        
-        function showError(message) {
-            document.getElementById('welcomeMessage').classList.add('d-none');
-            document.getElementById('errorContainer').classList.remove('d-none');
-            document.getElementById('errorMessage').textContent = message;
-        }
-        
-        function hideResults() {
-            document.getElementById('resultsContainer').classList.add('d-none');
-            document.getElementById('errorContainer').classList.add('d-none');
-        }
-        
-        function addToRecentSearches(address) {
-            // Add to localStorage and update UI
-            let recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
-            recent = recent.filter(addr => addr !== address); // Remove if exists
-            recent.unshift(address); // Add to beginning
-            recent = recent.slice(0, 5); // Keep only 5 most recent
-            localStorage.setItem('recentSearches', JSON.stringify(recent));
-            updateRecentSearches();
-        }
-        
-        function updateRecentSearches() {
-            const recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
-            const container = document.getElementById('recentSearches');
-            
-            if (recent.length === 0) {
-                container.innerHTML = '<small class="text-muted">No recent searches</small>';
-                return;
+            document.getElementById('aiRecommendations').innerHTML = recHtml;
+
+            // Risk Factors
+            let riskHtml = '';
+            if (analysis.risk_factors && analysis.risk_factors.length > 0) {
+                riskHtml = '<ul class="list-unstyled mb-0">';
+                analysis.risk_factors.forEach(risk => {
+                    riskHtml += `<li class="risk-item mb-2">${risk}</li>`;
+                });
+                riskHtml += '</ul>';
+            } else {
+                riskHtml = '<p class="text-muted mb-0">No significant risks identified</p>';
             }
-            
-            container.innerHTML = recent.map(addr => 
-                `<div class="d-flex justify-content-between align-items-center mb-1">
-                    <small class="text-truncate">${addr}</small>
-                    <button class="btn btn-sm btn-outline-primary btn-xs" onclick="document.getElementById('address').value='${addr}'">Use</button>
-                </div>`
-            ).join('');
+            document.getElementById('riskFactors').innerHTML = riskHtml;
+
+            // Data quality
+            const dqEl = document.getElementById('dataQualityNote');
+            if (analysis.data_quality_notes) {
+                dqEl.classList.remove('d-none');
+                dqEl.innerHTML = `<div class="alert alert-info border-0 py-2 small"><strong>Data Quality:</strong> ${analysis.data_quality_notes}</div>`;
+            } else {
+                dqEl.classList.add('d-none');
+            }
         }
-        
-        function delay(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-        
+
+        // ============================================================
+        // Display Flip Analysis Results
+        // ============================================================
         function displayFlipResults(data) {
             document.getElementById('welcomeMessage').classList.add('d-none');
             document.getElementById('resultsContainer').classList.remove('d-none');
             document.getElementById('errorContainer').classList.add('d-none');
-            document.getElementById('analysisTimestamp').textContent = new Date().toLocaleString();
 
             const property = data.property_data || {};
             const metrics = data.flip_metrics || {};
@@ -639,109 +657,251 @@
             const fin = fa.financial_summary || {};
             const reno = fa.renovation_scope || {};
 
-            // Determine badge color from recommendation
-            const rec = (fa.recommendation || '').toLowerCase();
-            const badgeClass = (rec === 'strong_buy' || rec === 'buy') ? 'bg-success' : rec === 'consider' ? 'bg-warning' : 'bg-danger';
+            // Verdict
+            const verdict = document.getElementById('dealVerdict');
+            verdict.classList.remove('d-none');
+            document.getElementById('verdictAddress').textContent = data.address;
+            document.getElementById('analysisTimestamp').textContent = new Date().toLocaleString();
+            document.getElementById('verdictSource').innerHTML = fa.flip_score
+                ? '<span class="fw-bold">Flip Score: ' + fa.flip_score + '</span>' : '';
 
-            // Property summary with Claude's ARV (not the formula one)
-            document.getElementById('propertySummary').innerHTML = `
-                <div class="row mb-3">
-                    <div class="col-md-8">
-                        <h6>${data.address}</h6>
-                        <p class="mb-1">${fa.flip_score ? '<strong>Flip Score: ' + fa.flip_score + '</strong>' : ''}</p>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <span class="badge ${badgeClass} fs-6">${(fa.recommendation || 'N/A').toUpperCase()}</span>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-3"><div class="property-feature"><h4>$${formatNumber(metrics.purchase_price)}</h4><small>Asking Price</small></div></div>
-                    <div class="col-md-3"><div class="property-feature"><h4>${arv.estimated_arv || '$' + formatNumber(metrics.estimated_arv)}</h4><small>AI-Estimated ARV</small></div></div>
-                    <div class="col-md-3"><div class="property-feature"><h4>${acq.max_allowable_offer || 'N/A'}</h4><small>Max Offer (70% Rule)</small></div></div>
-                    <div class="col-md-3"><div class="property-feature"><h4>${fin.expected_profit || '$' + formatNumber(metrics.potential_profit)}</h4><small>Expected Profit</small></div></div>
-                </div>
+            const rec = (fa.recommendation || '').toLowerCase();
+            let verdictClass = 'verdict-consider';
+            let verdictText = (fa.recommendation || 'ANALYZE').toUpperCase();
+            if (rec === 'strong_buy' || rec === 'buy') { verdictClass = 'verdict-buy'; }
+            else if (rec === 'pass' || rec === 'avoid') { verdictClass = 'verdict-pass'; }
+            document.getElementById('verdictBadge').className = 'verdict-badge ' + verdictClass;
+            document.getElementById('verdictBadge').textContent = verdictText;
+
+            // Key Stats
+            const arvDisplay = arv.estimated_arv || (metrics.estimated_arv ? '$' + formatNumber(metrics.estimated_arv) : 'N/A');
+            const profitDisplay = fin.expected_profit || (metrics.potential_profit ? '$' + formatNumber(metrics.potential_profit) : 'N/A');
+            const roiDisplay = fin.expected_roi || (metrics.roi_percentage ? metrics.roi_percentage + '%' : 'N/A');
+
+            document.getElementById('keyStatsRow').innerHTML = `
+                <div class="col-6 col-lg-2"><div class="stat-card"><div class="stat-value">$${formatNumber(metrics.purchase_price)}</div><div class="stat-label">Ask Price</div></div></div>
+                <div class="col-6 col-lg-2"><div class="stat-card stat-highlight-green"><div class="stat-value">${arvDisplay}</div><div class="stat-label">ARV</div></div></div>
+                <div class="col-6 col-lg-2"><div class="stat-card"><div class="stat-value">${acq.max_allowable_offer || 'N/A'}</div><div class="stat-label">Max Offer (70%)</div></div></div>
+                <div class="col-6 col-lg-2"><div class="stat-card"><div class="stat-value">${profitDisplay}</div><div class="stat-label">Expected Profit</div></div></div>
+                <div class="col-6 col-lg-2"><div class="stat-card"><div class="stat-value">${roiDisplay}</div><div class="stat-label">ROI</div></div></div>
+                <div class="col-6 col-lg-2"><div class="stat-card"><div class="stat-value">${property.beds || '?'}/${property.baths || '?'}</div><div class="stat-label">Bed/Bath</div></div></div>
             `;
 
-            // Deal breakers alert
+            // Deal Breakers
             let dealBreakerHtml = '';
             if (fa.deal_breakers && fa.deal_breakers.length) {
-                dealBreakerHtml = '<div class="alert alert-danger mb-3"><h6>Deal Breakers</h6><ul class="mb-0">' +
+                dealBreakerHtml = '<div class="alert alert-danger border-0 mb-3"><h6 class="fw-bold mb-2">Deal Breakers</h6><ul class="mb-0">' +
                     fa.deal_breakers.map(d => '<li>' + d + '</li>').join('') + '</ul></div>';
             }
 
-            // Acquisition analysis
-            let acqHtml = '';
-            if (acq.max_allowable_offer) {
-                acqHtml = `<div class="card mb-3 border-start-primary"><div class="card-body">
-                    <h6>Acquisition Analysis</h6>
-                    <p><strong>Max Allowable Offer:</strong> ${acq.max_allowable_offer}</p>
-                    <p><strong>Is Asking Price Viable:</strong> ${acq.is_asking_price_viable}</p>
-                    <p><strong>Negotiation Target:</strong> ${acq.negotiation_target}</p>
-                </div></div>`;
-            }
-
-            // Financial summary table
-            document.getElementById('valuationResults').innerHTML = `
-                ${dealBreakerHtml}
-                ${acqHtml}
-                <h6>Financial Breakdown</h6>
-                <table class="table table-sm">
-                    <tr><td>Asking Price</td><td class="text-end">$${formatNumber(metrics.purchase_price)}</td></tr>
-                    <tr><td>Renovation (${reno.scope_level || 'est.'})</td><td class="text-end">${reno.estimated_cost_low || '$' + formatNumber(metrics.estimated_renovation)} - ${reno.estimated_cost_high || ''}</td></tr>
-                    <tr><td>Holding Costs</td><td class="text-end">$${formatNumber(metrics.holding_costs)}</td></tr>
-                    <tr><td>Selling Costs</td><td class="text-end">$${formatNumber(metrics.selling_costs)}</td></tr>
-                    <tr class="fw-bold"><td>Total Cash Needed</td><td class="text-end">${fin.cash_needed || '$' + formatNumber(metrics.total_investment)}</td></tr>
-                    <tr class="fw-bold table-info"><td>AI-Estimated ARV</td><td class="text-end">${arv.estimated_arv || '$' + formatNumber(metrics.estimated_arv)}</td></tr>
-                    <tr class="fw-bold"><td>Expected Profit</td><td class="text-end">${fin.expected_profit || '$' + formatNumber(metrics.potential_profit)}</td></tr>
-                    <tr><td>Best Case</td><td class="text-end">${fin.best_case_profit || 'N/A'}</td></tr>
-                    <tr><td>Worst Case</td><td class="text-end">${fin.worst_case_profit || 'N/A'}</td></tr>
-                    <tr class="fw-bold"><td>Expected ROI</td><td class="text-end">${fin.expected_roi || metrics.roi_percentage + '%'}</td></tr>
-                </table>
-                ${arv.arv_methodology ? '<p class="text-muted small"><strong>ARV Methodology:</strong> ' + arv.arv_methodology + '</p>' : ''}
-                ${arv.arv_confidence ? '<p class="text-muted small"><strong>ARV Confidence:</strong> ' + arv.arv_confidence + '</p>' : ''}
-            `;
-
-            // Flip analysis card - renovation details
+            // Flip P&L Table
             const flipCard = document.getElementById('flipAnalysisCard');
             flipCard.classList.remove('d-none');
-            let flipHtml = '';
 
-            if (reno.priority_items && reno.priority_items.length) {
-                flipHtml += `<h6>Renovation Scope: ${reno.scope_level || ''} (${reno.timeline_months || 'TBD'})</h6>`;
-                flipHtml += '<ul>' + reno.priority_items.map(i => '<li>' + i + '</li>').join('') + '</ul>';
-            }
+            document.getElementById('flipAnalysisResults').innerHTML = `
+                ${dealBreakerHtml}
+                ${acq.max_allowable_offer ? `
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4"><div class="metric-card"><div class="metric-label">Max Offer (70% Rule)</div><div class="metric-value">${acq.max_allowable_offer}</div></div></div>
+                    <div class="col-md-4"><div class="metric-card"><div class="metric-label">Asking Viable?</div><div class="metric-value">${acq.is_asking_price_viable || 'N/A'}</div></div></div>
+                    <div class="col-md-4"><div class="metric-card"><div class="metric-label">Negotiation Target</div><div class="metric-value">${acq.negotiation_target || 'N/A'}</div></div></div>
+                </div>` : ''}
+                <h6 class="fw-bold mb-3">Profit & Loss</h6>
+                <div class="table-responsive">
+                    <table class="table table-investor">
+                        <tr><td>Purchase Price</td><td class="text-end fw-semibold">$${formatNumber(metrics.purchase_price)}</td></tr>
+                        <tr><td>Renovation (${reno.scope_level || 'est.'})</td><td class="text-end fw-semibold">${reno.estimated_cost_low ? reno.estimated_cost_low + ' - ' + reno.estimated_cost_high : '$' + formatNumber(metrics.estimated_renovation)}</td></tr>
+                        <tr><td>Holding Costs (6-8 mo)</td><td class="text-end fw-semibold">$${formatNumber(metrics.holding_costs)}</td></tr>
+                        <tr><td>Selling Costs (5% ARV)</td><td class="text-end fw-semibold">$${formatNumber(metrics.selling_costs)}</td></tr>
+                        <tr class="table-dark"><td class="fw-bold">Total All-In</td><td class="text-end fw-bold">${fin.cash_needed || '$' + formatNumber(metrics.total_investment)}</td></tr>
+                        <tr class="table-success"><td class="fw-bold">ARV (Sale Price)</td><td class="text-end fw-bold">${arvDisplay}</td></tr>
+                        <tr class="table-${(parseProfit(profitDisplay) >= 0) ? 'success' : 'danger'}"><td class="fw-bold">Expected Profit</td><td class="text-end fw-bold">${profitDisplay}</td></tr>
+                        ${fin.best_case_profit ? '<tr><td>Best Case</td><td class="text-end">' + fin.best_case_profit + '</td></tr>' : ''}
+                        ${fin.worst_case_profit ? '<tr><td>Worst Case</td><td class="text-end">' + fin.worst_case_profit + '</td></tr>' : ''}
+                        <tr class="table-info"><td class="fw-bold">ROI</td><td class="text-end fw-bold">${roiDisplay}</td></tr>
+                    </table>
+                </div>
+                ${arv.arv_methodology ? '<p class="text-muted small mt-2"><strong>ARV Method:</strong> ' + arv.arv_methodology + '</p>' : ''}
+                ${reno.priority_items && reno.priority_items.length ? `
+                    <h6 class="fw-bold mt-4 mb-2">Renovation Scope${reno.timeline_months ? ' (' + reno.timeline_months + ')' : ''}</h6>
+                    <ul class="mb-0">${reno.priority_items.map(i => '<li>' + i + '</li>').join('')}</ul>
+                ` : ''}
+            `;
 
-            if (fa.risks && fa.risks.length) {
-                flipHtml += '<h6 class="mt-3">Risk Factors</h6><ul class="text-danger">' + fa.risks.map(r => '<li>' + r + '</li>').join('') + '</ul>';
-            }
-            if (fa.exit_strategies && fa.exit_strategies.length) {
-                flipHtml += '<h6 class="mt-3">Exit Strategies</h6><ul>' + fa.exit_strategies.map(s => '<li>' + s + '</li>').join('') + '</ul>';
-            }
-            if (fa.raw_analysis) {
-                flipHtml += '<div class="alert alert-info"><pre style="white-space:pre-wrap">' + fa.raw_analysis.substring(0, 1500) + '</pre></div>';
-            }
-            document.getElementById('flipAnalysisResults').innerHTML = flipHtml || '<p class="text-muted">Detailed analysis not available</p>';
+            // Valuation section — show ARV details
+            document.getElementById('valuationResults').innerHTML = `
+                <div class="row g-4">
+                    <div class="col-md-4"><h6 class="text-secondary small text-uppercase fw-bold">ARV</h6><p class="h3 fw-bold text-emerald">${arvDisplay}</p></div>
+                    <div class="col-md-4"><h6 class="text-secondary small text-uppercase fw-bold">ARV Confidence</h6><p class="fw-semibold">${arv.arv_confidence || 'N/A'}</p></div>
+                    <div class="col-md-4"><h6 class="text-secondary small text-uppercase fw-bold">Market Factors</h6><p class="small">${fa.market_factors || 'N/A'}</p></div>
+                </div>
+            `;
+
+            // Investment metrics hidden for flip
+            document.getElementById('investmentCard').classList.add('d-none');
 
             // Comparables
             const comparables = data.comparables || [];
-            if (comparables.length > 0) {
-                let compHtml = '<p class="text-muted small mb-2">Distressed sales (foreclosure, probate, short sale) filtered out</p>';
-                comparables.forEach(comp => {
-                    compHtml += `<div class="comparable-item mb-3">
-                        <h6>${comp.address} <span class="badge bg-secondary">${comp.sale_type || 'standard'}</span></h6>
-                        <p class="mb-1"><strong>$${formatNumber(comp.sale_price)}</strong> | ${comp.beds || '?'} bed, ${comp.baths || '?'} bath | ${comp.sqft ? formatNumber(comp.sqft) + ' sqft' : 'sqft N/A'}</p>
-                    </div>`;
-                });
-                document.getElementById('comparablesResults').innerHTML = compHtml;
-            } else {
-                document.getElementById('comparablesResults').innerHTML = '<p class="text-muted">No arm\'s-length comparable sales found. Claude AI used market knowledge for valuation.</p>';
-            }
+            renderComparables(comparables, null);
 
-            document.getElementById('marketInsights').innerHTML = '<p>' + (fa.market_factors || 'Market analysis included in flip evaluation') + '</p>';
-            document.getElementById('aiRecommendations').innerHTML = '<p class="h5">Flip Score: ' + (fa.flip_score || 'N/A') + '</p>';
+            // Market
+            document.getElementById('marketInsights').innerHTML = '<p class="text-muted">' + (fa.market_factors || 'Market analysis included in flip evaluation') + '</p>';
+
+            // Recommendations = exit strategies
+            let recHtml = '';
+            if (fa.exit_strategies && fa.exit_strategies.length) {
+                recHtml = '<h6 class="fw-bold mb-2">Exit Strategies</h6><ul class="list-unstyled mb-0">' +
+                    fa.exit_strategies.map(s => '<li class="rec-item mb-2">' + s + '</li>').join('') + '</ul>';
+            }
+            document.getElementById('aiRecommendations').innerHTML = recHtml || '<p class="text-muted">N/A</p>';
+
+            // Risks
+            let riskHtml = '';
+            if (fa.risks && fa.risks.length) {
+                riskHtml = '<ul class="list-unstyled mb-0">' +
+                    fa.risks.map(r => '<li class="risk-item mb-2">' + r + '</li>').join('') + '</ul>';
+            }
+            document.getElementById('riskFactors').innerHTML = riskHtml || '<p class="text-muted">No significant risks</p>';
+
+            document.getElementById('dataQualityNote').classList.add('d-none');
         }
 
-        // Load recent searches on page load
+        // ============================================================
+        // Shared Helpers
+        // ============================================================
+
+        function renderComparables(comparables, compAnalysis) {
+            const compsUsed = (compAnalysis || {}).comps_used || [];
+            if (comparables.length > 0) {
+                let html = `<div class="d-flex justify-content-between align-items-center mb-3">
+                    <small class="text-muted">Distressed sales filtered (foreclosure, probate, short sale, etc.)</small>
+                    <span class="badge bg-secondary">${comparables.length} comp${comparables.length > 1 ? 's' : ''}</span>
+                </div>`;
+                comparables.forEach((comp, idx) => {
+                    const aiComp = compsUsed[idx] || {};
+                    const grade = aiComp.similarity_grade || '';
+                    const gradeClass = grade.startsWith('A') ? 'grade-a' : grade.startsWith('B') ? 'grade-b' : 'grade-c';
+                    const dist = comp.distance_miles
+                        ? (comp.distance_miles < 0.2 ? 'Same street' : comp.distance_miles.toFixed(1) + ' mi')
+                        : '';
+                    const ppsqft = (comp.sale_price && comp.sqft)
+                        ? '$' + Math.round(parseInt(String(comp.sale_price).replace(/,/g,'')) / comp.sqft) + '/sqft'
+                        : '';
+                    html += `
+                        <div class="comp-card mb-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <h6 class="fw-bold mb-0 me-2">${comp.address}</h6>
+                                        ${dist ? '<span class="badge bg-dark me-1">' + dist + '</span>' : ''}
+                                        <span class="badge bg-secondary">${comp.sale_type || 'standard'}</span>
+                                    </div>
+                                    <div class="row g-2 mt-1">
+                                        <div class="col-auto"><strong class="text-emerald">$${formatNumber(comp.sale_price)}</strong></div>
+                                        <div class="col-auto text-muted">${comp.beds || '?'} bd / ${comp.baths || '?'} ba</div>
+                                        <div class="col-auto text-muted">${comp.sqft ? formatNumber(comp.sqft) + ' sqft' : 'N/A'}</div>
+                                        ${ppsqft ? '<div class="col-auto"><span class="badge bg-light text-dark">' + ppsqft + '</span></div>' : ''}
+                                        ${comp.year_built ? '<div class="col-auto text-muted">Built ' + comp.year_built + '</div>' : ''}
+                                        ${comp.sale_date ? '<div class="col-auto text-muted">Sold ' + comp.sale_date + '</div>' : ''}
+                                    </div>
+                                    ${aiComp.adjustments ? '<div class="mt-1"><small class="text-muted">Adjustments: ' + aiComp.adjustments + '</small></div>' : ''}
+                                    ${aiComp.adjusted_value ? '<small class="fw-bold text-emerald">Adjusted Value: ' + aiComp.adjusted_value + '</small>' : ''}
+                                </div>
+                                ${grade ? '<div class="ms-3"><span class="comparable-grade ' + gradeClass + '">' + grade + '</span></div>' : ''}
+                            </div>
+                        </div>`;
+                });
+                if ((compAnalysis || {}).comp_quality_score) {
+                    html += '<p class="text-muted small mt-2 mb-0"><strong>Comp Quality:</strong> ' + compAnalysis.comp_quality_score + '</p>';
+                }
+                document.getElementById('comparablesResults').innerHTML = html;
+            } else {
+                document.getElementById('comparablesResults').innerHTML = `
+                    <div class="text-center py-4">
+                        <p class="text-muted mb-2">No arm's-length comparable sales found via scraping.</p>
+                        <small class="text-muted">Zillow/Redfin may be blocking automated searches. Claude AI used market knowledge for valuation.</small>
+                    </div>`;
+            }
+        }
+
+        function formatNumber(num) {
+            if (num === null || num === undefined || num === '' || num === 'None' || num === 'Unknown') return 'N/A';
+            const cleaned = String(num).replace(/[$,\s]/g, '');
+            const parsed = parseFloat(cleaned);
+            if (isNaN(parsed)) return String(num);
+            return Math.round(parsed).toLocaleString();
+        }
+
+        function parseProfit(str) {
+            if (!str || str === 'N/A') return 0;
+            const cleaned = String(str).replace(/[$,\s]/g, '');
+            return parseFloat(cleaned) || 0;
+        }
+
+        function getGradeClass(grade) {
+            if (!grade) return '';
+            const g = grade.toString().toUpperCase();
+            if (g.startsWith('A') || g === 'EXCELLENT') return 'metric-positive';
+            if (g.startsWith('B') || g === 'GOOD') return 'metric-neutral';
+            return 'metric-negative';
+        }
+
+        function showLoading(show) {
+            const btn = document.getElementById('analyzeBtn');
+            if (show) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Analyzing...';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = 'Analyze Deal';
+            }
+        }
+
+        function showProgress(pct, text) {
+            const c = document.getElementById('progressContainer');
+            c.classList.remove('d-none');
+            document.getElementById('progressBar').style.width = pct + '%';
+            document.getElementById('progressText').textContent = text;
+        }
+        function updateProgress(pct, text) { showProgress(pct, text); }
+        function hideProgress() { document.getElementById('progressContainer').classList.add('d-none'); }
+
+        function showError(message) {
+            document.getElementById('welcomeMessage').classList.add('d-none');
+            document.getElementById('errorContainer').classList.remove('d-none');
+            document.getElementById('errorMessage').textContent = message;
+        }
+        function hideResults() {
+            document.getElementById('resultsContainer').classList.add('d-none');
+            document.getElementById('errorContainer').classList.add('d-none');
+        }
+
+        function addToRecentSearches(address) {
+            let recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+            recent = recent.filter(a => a !== address);
+            recent.unshift(address);
+            recent = recent.slice(0, 5);
+            localStorage.setItem('recentSearches', JSON.stringify(recent));
+            updateRecentSearches();
+        }
+
+        function updateRecentSearches() {
+            const recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+            const c = document.getElementById('recentSearches');
+            if (recent.length === 0) {
+                c.innerHTML = '<small class="text-muted">No recent searches</small>';
+                return;
+            }
+            c.innerHTML = recent.map(addr =>
+                `<div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-light text-truncate me-2">${addr}</small>
+                    <button class="btn btn-sm btn-outline-light btn-xs" onclick="document.getElementById('address').value='${addr}'">Use</button>
+                </div>`
+            ).join('');
+        }
+
+        function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
         document.addEventListener('DOMContentLoaded', updateRecentSearches);
     </script>
 </body>
